@@ -1,0 +1,781 @@
+要搞懂nachos，首先你要理解JAVA本身的多线程
+请自行搜索以下关键字
+JAVA多线程 interface runnable(run),  wait, notify, synchronized
+。。。。表示没有弄懂的部分
+
+一条有用的命令：
+Thread.dumpStack()
+可以看看当前的运行栈
+
+V0.3改动日志：第二部分到KThread.selfTest()
+V0.8改动日志：增加了第一部分，第二部分增加了semaphore和condition variable，增加了第三部分
+1.第一部分建议大家在看过第二部分之后看，因为第二部分对一个比较宏观的认识比较有帮助
+2.第一部分貌似不看也行...
+
+let the pain begin
+第一部分：Privilege和Timer
+第一个运行的是nachos machine.machine
+他先load了config，这段比较简单，我们略过，然后执行了
+		securityManager = new NachosSecurityManager(testDirectory); \\几乎没做什么
+		privilege = securityManager.getPrivilege();
+
+		privilege.machine = new MachinePrivilege(); 
+
+		TCB.givePrivilege(privilege); 
+		privilege.stats = stats; 
+
+		securityManager.enable();
+		createDevices(); 
+		checkUserClasses(); \\not important
+然后看看getPrivilege()，于是又要看PrivilegeProvider()
+	public Privilege getPrivilege() {
+		Lib.assertTrue(this != System.getSecurityManager());
+
+		return new PrivilegeProvider();
+	}
+这个PrivilegeProvider是这样的，感觉十分复杂
+	private class PrivilegeProvider extends Privilege {
+		public void doPrivileged(Runnable action) {
+			NachosSecurityManager.this.doPrivileged(action); 
+		}
+
+		public Object doPrivileged(PrivilegedAction action) {
+			return NachosSecurityManager.this.doPrivileged(action);
+		}
+
+		public Object doPrivileged(PrivilegedExceptionAction action)
+				throws PrivilegedActionException {
+			return NachosSecurityManager.this.doPrivileged(action);
+		}
+
+		public void exit(int exitStatus) {
+			invokeExitNotificationHandlers();
+			NachosSecurityManager.this.exit(exitStatus);
+		}
+	}
+注意NachosSecurity.this这个语法指调用父类的方法，所以我们看父类的方法
+	private void doPrivileged(final Runnable action) {
+		doPrivileged(new PrivilegedAction() { \\这里就是简单调用了下面的方法
+			public Object run() {
+				action.run(); 
+				return null;
+			}
+		});
+	}
+
+	private Object doPrivileged(PrivilegedAction action) {
+		Object result = null;
+		enablePrivilege(); 
+		try {
+			result = action.run();
+		} catch (Throwable e) {
+			rethrow(e);
+		}
+		disablePrivilege();
+		return result;
+	}
+先看看enablePrivilege
+	private void enablePrivilege() {
+		if (privilegeCount == 0) {
+			Lib.assertTrue(privileged == null);
+			privileged = Thread.currentThread();
+			privilegeCount++;
+		} else {
+			Lib.assertTrue(privileged == Thread.currentThread());
+			privilegeCount++;
+		}
+	}
+和disablePrivilege
+	private void disablePrivilege() {
+		Lib.assertTrue(privileged != null && privilegeCount > 0);
+		privilegeCount--;
+		if (privilegeCount == 0)
+			privileged = null;
+	}
+从这两段代码我们发现，doPrivileged方法确实只是为了安全考虑，就是说，它时刻检查是否有两个并行的线程同时执行privilege操作，如果发现，马上终止系统
+
+回到machine的初始化，然后看		privilege.machine = new MachinePrivilege(); 
+	private static class MachinePrivilege implements Privilege.MachinePrivilege {
+		public void setConsole(SerialConsole console) {
+			Machine.console = console;
+		}
+	}
+感觉什么都没干
+接着是		TCB.givePrivilege(privilege); 
+	public static void givePrivilege(Privilege privilege) {
+		TCB.privilege = privilege;
+		privilege.tcb = new TCBPrivilege(); \\TCB的一个子类这个没有构造函数
+	}
+所以，givePrivilege应该就是把一个privilege对象给了tcb，至于tcb能用它来干嘛，要继续往下看了
+可以先看看Privilege的注释，看着感觉挺有道理的
+ * A capability that allows privileged access to the Nachos machine.
+ * 
+ * <p>
+ * Some privileged operations are guarded by the Nachos security manager:
+ * <ol>
+ * <li>creating threads
+ * <li>writing/deleting files in the test directory
+ * <li>exit with specific status code
+ * </ol>
+ * These operations can only be performed through <tt>doPrivileged()</tt>.
+它这里说的挺好听，似乎privilege提供了安全性，其实我们如果往下看（在讲解fork()那一段的时候）的话，发现tcb想新开一个线程时是这么做的
+			privilege.doPrivileged(new Runnable() {
+				public void run() {
+					javaThread = new Thread(tcbTarget);
+				}
+			});
+所以在我看来，Privilege这个东西还是提供了一个安全保障，它会检测这个操作是不是只有一个线程在做，如果发现就抛异常
+
+
+所以总结来说，Privilege这个东西，我觉得不是核心内容。
+
+
+然后初始化中执行了securityManager.enable();，这里貌似没干什么重要的事，就跳过吧。
+好的，下面我们看createDevice()
+	private static void createDevices() {
+		interrupt = new Interrupt(privilege); 
+		timer = new Timer(privilege); 。。。。
+
+		if (Config.getBoolean("Machine.processor")) {
+			if (numPhysPages == -1)
+				numPhysPages = Config.getInteger("Processor.numPhysPages");
+			processor = new Processor(privilege, numPhysPages);
+		}
+
+		if (Config.getBoolean("Machine.graphicalConsole", false))
+			console = new GraphicalConsole(privilege);
+		else if (Config.getBoolean("Machine.console"))
+			console = new StandardConsole(privilege);
+
+		if (Config.getBoolean("Machine.realFileSystem", false)) {
+			String diskFileName = Config.getString("Machine.diskFilename",
+					"nachos-disk.dat");
+			synchDisk = new SynchDisk(privilege, diskFileName);
+		}
+		
+		if (Config.getBoolean("Machine.stubFileSystem"))
+			stubFileSystem = new StubFileSystem(privilege, testDirectory);
+
+		if (Config.getBoolean("Machine.networkLink"))
+			networkLink = new NetworkLink(privilege);
+	}
+好了我们来看看Interrupt的构造函数
+	public Interrupt(Privilege privilege) {
+		System.out.print(" interrupt");
+
+		this.privilege = privilege;
+		privilege.interrupt = new InterruptPrivilege();
+
+		enabled = false;
+		pending = new TreeSet<PendingInterrupt>();
+	}
+
+然后就是看Timer了
+	public Timer(Privilege privilege) {
+		System.out.print(" timer");
+
+		this.privilege = privilege;
+
+		timerInterrupt = new Runnable() {
+			public void run() {
+				timerInterrupt();
+			}
+		};
+
+		autoGraderInterrupt = new Runnable() {
+			public void run() {
+				Machine.autoGrader().timerInterrupt(Timer.this.privilege,
+						lastTimerInterrupt);
+			}
+		};
+
+		scheduleInterrupt();
+	}
+于是开始看scheduleInterrupt()
+	private void scheduleInterrupt() {
+		int delay = Stats.TimerTicks;
+		delay += Lib.random(delay / 10) - (delay / 20);
+
+		privilege.interrupt.schedule(delay, "timer", timerInterrupt);
+	}
+这里delay就是500，我们看到给它加上了一个随机扰动，然后执行了privilege.interrupt.schedule方法，这里的interrupt应该是在上面的Interrupt里的
+		privilege.interrupt = new InterruptPrivilege();
+出现的。
+InterruptPrivilege是这样的，
+	private class InterruptPrivilege implements Privilege.InterruptPrivilege {
+		public void schedule(long when, String type, Runnable handler) {
+			Interrupt.this.schedule(when, type, handler);
+		}
+
+		public void tick(boolean inKernelMode) {
+			Interrupt.this.tick(inKernelMode);
+		}
+	}
+我们会发现它调用了父类的schedule，when是500，type是"timer"，handler是timerInterrupt
+	private void timerInterrupt() {
+		scheduleInterrupt();
+		scheduleAutoGraderInterrupt();
+
+		lastTimerInterrupt = getTime();
+
+		if (handler != null)
+			handler.run();
+	}
+它又调用了一次scheduleInterrupt()，然后调用了handler.run()，注意，这里的handler是Timer里面的handler，而我们发现Timer的
+	public void setInterruptHandler(Runnable handler) {
+		this.handler = handler;
+	}
+还没有被调用过，所以这个Handler是null，如果你耐心往后看notes的话，会发现在KThread的Alarm生成时，会有一个
+		Machine.timer().setInterruptHandler(new Runnable() {
+			public void run() {
+				timerInterrupt();
+			}
+		});
+就是说，这个alarm一个封装，它依靠Timer来使自己过一会就执行一下，你往后看就会看到，这个alarm是用来做上下文切换的
+
+看看Interrupt.schedule方法
+	private void schedule(long when, String type, Runnable handler) {
+		Lib.assertTrue(when > 0);
+
+		long time = privilege.stats.totalTicks + when;
+		PendingInterrupt toOccur = new PendingInterrupt(time, type, handler);
+
+		Lib.debug(dbgInt, "Scheduling the " + type
+				+ " interrupt handler at time = " + time);
+
+		pending.add(toOccur);
+	}
+这个pending是		pending = new TreeSet<PendingInterrupt>();，原来schedule方法只是把一个待发生的Interrupt放到一个TreeSet里面
+因此我们发现，这个Timer就是用来过一段时间来执行一个东西，它会自己把自己放到一个等待队列里，然后执行要执行的东西，在这里就是alarm，就是上下文切换。
+但我们现在的问题是：似乎时间没有流逝。。。
+ * This module also keeps track of simulated time. Time advances only when the
+ * following occur:
+ * <ul>
+ * <li>interrupts are enabled, when they were previously disabled
+ * <li>a MIPS instruction is executed
+ * </ul>
+我使用Interrupt.tick做了实验，发现如果在KThread.PingTest删除yield的话，时间就根本没有流逝，
+
+
+第二部分：KThread
+
+
+第一个TCB是在machine.machine的main方法里创建的，它的线程运行的是autograder。
+		new TCB().start(new Runnable() {
+			public void run() {
+				autoGrader.start(privilege);
+			}
+		});
+于是就进入了TCB的start方法，因为是第一个TCB，它先随便搞了一个javaThread = Thread.currentThread();，这个线程就是我们目前正在看的主线程
+然后就直接进入TCB的threadroot()方法
+在threadroot()的第一次调用中，因为是FirstTCB，所以会直接进入autoGrader.start(privilege)方法，我们来到nachos.ag.AutoGrader
+在它的start()中，它会先调用ThreadedKernel.initialize(args)，然后会调用自己的run()
+在Kernel.init()里面，主要干了这些事
+		\\start threading
+		new KThread(null); \\对KThread做了一些初始化
+		alarm = new Alarm(); \\这个Alarm会每500秒通过执行KThread.yield()来进行一个中断，进行一个强迫的content switch
+				\\看看KThread.yield()会发现，它停下了current，并对readyQueue中的nextThread执行了run()，在run()中，会有一个content 				\\switch，不过这个东西是要我们去实现的，目前暂时可以无视	
+		Machine.interrupt().enable(); \\看不懂
+在AutoGrader()的run()，有
+		kernel.selfTest();
+		kernel.run();\\currently nothing
+		kernel.terminate();                  
+
+我们看selfTest()和terminate()，注意，现在已经有了一个TCB，它的javat+hread就是主线程，并且显然正在跑
+
+我们来看Kernel的selfTest()，有
+		KThread.selfTest();
+		Semaphore.selfTest();   
+		SynchList.selfTest();   
+因此我们看KThread.selfTest()，有
+		new KThread(new PingTest(1)).setName("forked thread").fork();
+		new PingTest(0).run();            
+注意，这段话可以改成类似
+		new KThread(new PingTest(1)).setName("forked thread").fork();
+		new KThread(new PingTest(2)).setName("forked thread").fork();
+		new PingTest(0).run();
+因此我们看看PingTest的run()是干嘛的
+			for (int i = 0; i < 5; i++) {
+				System.out.println("*** thread " + which + " looped " + i
+						+ " times");
+				KThread.yield();
+			}
+发现他就做了五个简单的输出，并且每次输出之后主动地让KThread交换一个进程，因此看到的输出是0101010101..如果把yield删掉，会变成0000011111...，不知道为何，我以为会有自动地上下文切换的，这个问题，我们会在后面给出一个十分坑爹的解答。
+注意第一个pingTest的值是1，然后会执行KThread的构造函数，再执行fork()
+在KThread的构造函数中，注意这已经是第二个KThread了，因此它首先
+	tcb = new TCB(); \\TCB() does nothing
+然后	this.target = target;
+因此这个KThread的构造函数只是单纯地给这个新的kthread新建了一个新的tcb，所以我们来到fork()
+
+fork指什么？我们可能会觉得fork是说分身出一个一模一样（能力，装备，伤害都一模一样）的线程（孤光的大招？），听着不错，这显然是扯淡。
+fork就是新产生一个线程，注意我们现在正在track的是一个主线程，主线程发现，又有一个runnable的东西了，现在tcb也有了，target也有了，万事具备
+或者说，主线程要执行一个run()，但主线程不想自己做，于是，“分叉”出一个线程去做
+
+	public void fork() {
+		Lib.assertTrue(status == statusNew);
+		Lib.assertTrue(target != null);
+
+		Lib.debug(dbgThread, "Forking thread: " + toString() + " Runnable: "
+				+ target);
+
+		boolean intStatus = Machine.interrupt().disable(); \\看不懂
+
+		tcb.start(new Runnable() {
+			public void run() {
+				runThread();
+			}
+		});
+
+		ready(); \\加入等待队列，等待一个content-switch把自己换过来
+
+		Machine.interrupt().restore(intStatus);
+	}
+先看看runThread吧
+	private void runThread() {
+		begin();
+		target.run();
+		finish();
+	}
+好吧，其实就是一个run.....begin()和finish()中有一些东西目前还看不懂。。。。先掠过，下面就看tcb的start()了，注意，这是我们第二次来到这个方法了：
+注意，这时他做了一些比较奇怪的事：
+			tcbTarget = new Runnable() {
+				public void run() {
+					threadroot(); 
+				}
+			};
+
+			privilege.doPrivileged(new Runnable() {
+				public void run() {
+					javaThread = new Thread(tcbTarget);
+				}
+			});
+大家应该还记得threadroot()其实就是用来执行目标对象的run的，我们发现，它把threadroot()又封装到了一个java thread中
+为什么做这些让人看不懂的事呢？其实很简单，注意在JVM中，我们现在还在主线程里，没有任何其他线程，它这里其实就是新建了一个JVM中的线程，并且把threadroot交给它来执行。
+我们先不看threadroot()，接着的操作是：
+			currentTCB.running = false;
+			this.javaThread.start();
+			currentTCB.waitForInterrupt();
+然后start方法结束。
+
+这一段有难点，它应该是强迫主程进入一个sleep()（第一行和第三行），然后让我们的新java thread开始工作，那么为什么要让当前线程必须停掉呢？从注释来看，似乎是和content-switch有关
+注意这时候还没有使用ready()方法，就是说这个新的线程还没有在ready()队列中，那么就不会被content-switch过来，而且，虽然我们已经在一个新threadroot()了，但currentTCB都没有被换过来！
+为了解决这个谜团，我们来看threadroot()，它在run()之前，先干了：
+			currentTCB.interrupt();
+			this.yield();
+它其实就是把本来的线程叫醒，然后自己睡着。那么这样做的目的是什么呢？好了，我们可以总结一下他到底干了什么：他先把当前线程停掉，然后开始运行自己，然后自己睡着，并且叫醒本来的当前线程，好像什么事都没发生过。
+为什么呢？我们可以先看一看这样做产生了什么结果：他睡着之后，这时tcb.start()方法已经结束了，当时间片轮换到主线程时，会继续执行fork()之后的东西，
+就是ready(); ，ready()会把这个tcb加入到readyQueue里面，那么，下一次时间片轮换可能就会让我们的新线程开始运转了，一切ok！
+那么如果不这样会怎么样呢？大家注意，这时这个新的javathread已经开始运行了，如果我们不在它一开始就让它睡着，那么它就真的开始自己运行了（废话）！但是！这时我们一没有把它加入到readyQueue里面，二甚至也没有改currenttcb，换句话说，对于nachos虚拟机来说，等于是多出来一个与所有线程并行的，但不受系统控制的幽灵线程，这显然不是我们的目的。
+
+说了那么长一段，大家可能不知道接下来track什么了，其实对于主线程来说，我们是把下面的那个fork()执行完了
+		new KThread(new PingTest(1)).setName("forked thread").fork();
+		new PingTest(0).run();           
+然后主线程自己也运行一个PingTest，因此，我们会在输出中看到有两个线程竞相输出字符串。
+好了，到目前为止，有两个线程，一个是主线程，一个是主线程fork()出来的线程，它们都在run PingTest()，它们也都有自己的tcb，非常好。
+好个屁，我根本不知道这两个线程是如何切换的，难道都是靠JVM自动切换的？显然不是，nachos的目的就是模拟切换线程的过程，但我们没有track到任何的切换代码啊。
+大家还记得最开始有个
+	alarm = new Alarm();
+吗？
+现在是时候仔细看看那个了，刚才说过了，这个玩意就是每隔一段时间执行Kthread.yield()
+	public static void yield() {
+		Lib.debug(dbgThread, "Yielding thread: " + currentThread.toString());
+
+		Lib.assertTrue(currentThread.status == statusRunning);
+
+		boolean intStatus = Machine.interrupt().disable();
+
+		currentThread.ready();
+
+		runNextThread();
+
+		Machine.interrupt().restore(intStatus);
+	}
+他先把当前线程加入到等待队列，然后执行runNextThread()
+	private static void runNextThread() {
+		KThread nextThread = readyQueue.nextThread();
+		if (nextThread == null)
+			nextThread = idleThread;
+
+		nextThread.run();
+	}
+因此接下来我们看run方法
+	private void run() {
+		Lib.assertTrue(Machine.interrupt().disabled());
+
+		Machine.yield();
+
+		//only to be sure ok to get it down
+		currentThread.saveState();
+
+		Lib.debug(dbgThread, "Switching from: " + currentThread.toString()
+				+ " to: " + toString());
+
+		currentThread = this;
+
+		tcb.contextSwitch();
+		
+		currentThread.restoreState();
+	}
+它会对要换过来的那个tcb执行一个contextSwitch()，好了，原来线程切换时Alarm做的，太好了，又解决了一个问题
+当时我正在问诚牛这个问题，我们很开心地给Alarm加了条调试信息，然后发现KThread.yield()从头到尾就没有被执行过....
+然后诚牛明智地看了看document，发现Alarm是要叫我们自己去complete的，吐血...
+那么线程切换到底是哪里出现的呢？我找了又找，原来是！
+				System.out.println("*** thread " + which + " looped " + i
+						+ " times");
+				KThread.yield();
+这个yield()里面会主动进行线程切换，所以我们的输出结果是010101的形式
+大家可以把yield()删除试试，会发现线程直接就不切换了（因为timetick的问题，时间并没有流逝，所以alarm的上下文切换没有起到作用）
+
+
+
+接下来主线程会执行Semaphore.selfTest();
+	public static void selfTest() {
+		Semaphore ping = new Semaphore(0); \\将一个value设为0
+		Semaphore pong = new Semaphore(0);
+
+		new KThread(new PingTest(ping, pong)).setName("ping").fork();
+
+		for (int i = 0; i < 10; i++) { 
+			ping.V(); 
+			pong.P(); 
+		}
+	}
+然后我们看看KThread里做了什么
+		PingTest(Semaphore ping, Semaphore pong) {
+			this.ping = ping;
+			this.pong = pong;
+		}
+刚才我们对fork()已经做了详尽的解释，这里就不去管了，我们知道又主线程又分支出了一个子线程，主要要看看run了什么
+		public void run() {
+			for (int i = 0; i < 10; i++) {
+				ping.P();
+				pong.V();
+			}
+		}
+额，我们看到这个子线程和主线程相得益彰，主线程先V后P，子线程先P后V
+	/**
+	 * Atomically wait for this semaphore to become non-zero and decrement it.
+	 */
+	public void P() {
+		boolean intStatus = Machine.interrupt().disable();
+
+		if (value == 0) {
+			waitQueue.waitForAccess(KThread.currentThread());
+			KThread.sleep();
+		} else {
+			value--;
+		}
+
+		Machine.interrupt().restore(intStatus);
+	}
+	/**
+	 * Atomically increment this semaphore and wake up at most one other thread
+	 * sleeping on this semaphore.
+	 */
+	public void V() {
+		boolean intStatus = Machine.interrupt().disable();
+
+		KThread thread = waitQueue.nextThread();
+		if (thread != null) {
+			thread.ready();//注意这个唤醒十分关键
+		} else {
+			value++;
+		}
+
+		Machine.interrupt().restore(intStatus);
+	}
+
+所以这里看起来就像是主线程和子线程交替运行
+我做了一个实验
+在P和V里面的else里分别加了句调试信息，结果输出
+mainV
+ForkedpingP
+发现V和P只被执行了一次，这是为什么呢，马上我们就能解释
+我们看到它先禁止了中断，然后看看waitForrrAccess方法
+		/**
+		 * Add a thread to the end of the wait queue.
+		 * 
+		 * @param thread
+		 *            the thread to append to the queue.
+		 */
+		public void waitForAccess(KThread thread) {
+			Lib.assertTrue(Machine.interrupt().disabled());
+
+			waitQueue.add(thread);
+		}
+和KThread.sleep()方法
+	 * If the current thread is blocked (on a synchronization primitive, i.e. a
+	 * <tt>Semaphore</tt>, <tt>Lock</tt>, or <tt>Condition</tt>), eventually
+	 * some thread will wake this thread up, putting it back on the ready queue
+	 * so that it can be rescheduled. Otherwise, <tt>finish()</tt> should have
+	 * scheduled this thread to be destroyed by the next thread to run.
+	 */
+	public static void sleep() {
+		Lib.debug(dbgThread, "Sleeping thread: " + currentThread.toString());
+
+		Lib.assertTrue(Machine.interrupt().disabled());
+
+		if (currentThread.status != statusFinished)
+			currentThread.status = statusBlocked;
+
+		runNextThread();
+	}
+仔细想一下我们就能获知semaphore的工作方式：如果当前线程被阻塞了，就自己sleep掉，等待V来wakeup自己，注意每个semaphore都有单独的waitQueue，他们会唤醒跟自己有关的线程。
+这就是semaphore的原理，所以加加和减减只被运行了一次，但其实你可以看成是：我要减的时候发现减不动，于是我告诉那个要加的线程：如果你要加的时候发现我正在睡觉，你就别加了，把我唤醒一个效果哦。就是这样...
+
+最后我们看SynchList.selfTest(); 
+	public static void selfTest() {
+		SynchList<Integer> ping = new SynchList<Integer>();
+		SynchList<Integer> pong = new SynchList<Integer>();
+
+		new KThread(new PingTest(ping, pong)).setName("ping").fork();
+
+		for (int i = 0; i < 10; i++) {
+			Integer o = new Integer(i);
+			ping.add(o);
+			Lib.assertTrue(pong.removeFirst() == o);
+		}
+	}
+这是一个模板类
+	public SynchList() {
+		list = new LinkedList<T>();
+		lock = new Lock();\\does nothing
+		listEmpty = new Condition(lock);
+	}
+这里Condition类涉及到了condition variable的知识，我们貌似都没教，所以要上网学一下：
+http://www.stanford.edu/class/cs140/cgi-bin/lecture.php?topic=locks
+貌似主要的几句话是：
+_wait(condition, lock): release lock, put thread to sleep until condition is signaled; when thread wakes up again, re-acquire lock before returning.
+signal(condition, lock): if any threads are waiting on condition, wake up one of them. Caller must hold lock, which must be the same as the lock used in the wait call.
+broadcast(condition, lock): same as signal, except wake up all waiting threads.
+Note: after signal, signaling thread keeps lock, waking thread goes on the queue waiting for the lock.
+好了我们看看Condition的构造函数
+	public Condition(Lock conditionLock) {
+		this.conditionLock = conditionLock;
+
+		waitQueue = new LinkedList<Semaphore>();
+	}
+注释里说condition是建立在semaphore之上的，所以这里跟semaphore有关系
+然后我们看fork那里，PingTest是这个
+	private static class PingTest implements Runnable {
+		PingTest(SynchList<Integer> ping, SynchList<Integer> pong) {
+			this.ping = ping;
+			this.pong = pong;
+		}
+
+		public void run() {
+			for (int i = 0; i < 10; i++)
+				pong.add(ping.removeFirst());
+		}
+
+		private SynchList<Integer> ping;
+		private SynchList<Integer> pong;
+	}
+所以这个synchList测试应该是两个队列ping和pong，主线程给ping加，然后从pong里拿，fork线程把从ping里拿加入pong
+先看看add和remove吧
+	public void add(T o) {
+		Lib.assertTrue(o != null);
+
+		lock.acquire();
+		list.add(o);
+		listEmpty.wake();
+		lock.release();
+	}
+	public T removeFirst() {
+		T o;
+
+		lock.acquire();
+		while (list.isEmpty())
+			listEmpty.sleep();
+		o = list.removeFirst();
+		lock.release();
+
+		return o;
+	}
+我们看到是上锁，拿不到就睡，放了就叫醒的套路，所以我们的注意就被转移到了Lock是怎么实现上面来了
+	/**
+	 * Atomically acquire this lock. The current thread must not already hold
+	 * this lock.
+	 */
+	public void acquire() {
+		Lib.assertTrue(!isHeldByCurrentThread());
+
+		boolean intStatus = Machine.interrupt().disable();
+		KThread thread = KThread.currentThread();
+
+		if (lockHolder != null) {
+			waitQueue.waitForAccess(thread);
+			KThread.sleep();
+		} else {
+			waitQueue.acquire(thread);
+			lockHolder = thread;
+		}
+
+		Lib.assertTrue(lockHolder == thread);
+
+		Machine.interrupt().restore(intStatus);
+	}
+
+	/**
+	 * Atomically release this lock, allowing other threads to acquire it.
+	 */
+	public void release() {
+		Lib.assertTrue(isHeldByCurrentThread());
+
+		boolean intStatus = Machine.interrupt().disable();
+
+		if ((lockHolder = waitQueue.nextThread()) != null)
+			lockHolder.ready();
+
+		Machine.interrupt().restore(intStatus);
+	}
+感觉上和semaphore的实现差不多是一样的，所以不看啦。接着我们看listEmpty这个东西
+从listEmpty的名字上就能看出来很像一个ConditionVariable，就是说列表是否是空的，让我们看看它是如何工作的吧
+	public void sleep() {
+		Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+
+		Semaphore waiter = new Semaphore(0);
+		waitQueue.add(waiter);
+
+		conditionLock.release();
+		waiter.P();
+		conditionLock.acquire();
+	}
+	public void wake() {
+		Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+
+		if (!waitQueue.isEmpty())
+			((Semaphore) waitQueue.removeFirst()).V();
+	}
+没错，就是一个简单semaphore实现的等待。
+
+
+
+
+到此为止，Kernel的三个自检都做完
+了，只剩kernel.terminate(); 了
+	public void terminate() {
+		Machine.halt();
+	}
+	public static void halt() {
+		System.out.print("Machine halting!\n\n");
+		stats.print();
+		terminate();
+	}
+跳到了machine.terminate()里面
+	public static void terminate() {
+		TCB.die();
+	}
+又跳到了TCB.die()
+	public static void die() {
+		privilege.exit(0);
+	}
+又跳到了（累不累）privilege.exit(0)
+这应该是PrivilegeProvider的exit
+		public void exit(int exitStatus) {
+			invokeExitNotificationHandlers();
+			NachosSecurityManager.this.exit(exitStatus);
+		}
+先是Privilege里面的
+		for (Iterator i = exitNotificationHandlers.iterator(); i.hasNext();) {
+			try {
+				((Runnable) i.next()).run();
+			} catch (Throwable e) {
+				System.out.println("exit() notification handler failed");
+			}
+		}
+但我调试了一下，发现这段代码被执行的时候队列是空的。。。。
+于是又跳到了NachosSecurityManager.exit
+	private void exit(int exitStatus) {
+		forcePrivilege();
+		System.exit(exitStatus);
+	}
+forcePrivilege是
+	private void forcePrivilege() {
+		privileged = Thread.currentThread();
+		privilegeCount = 1;
+	}
+不知道它做了什么。。。。然后系统就停了，那就奇怪了，那些线程是如何结束的呢？
+我不知道大家记不记得前面的一段
+	private void runThread() {
+		begin();
+		target.run();
+		finish();
+	}
+总之，每个线程会执行finish()
+
+在finish里里面会把自己设为tobedestroyed，然后执行sleep
+	public static void sleep() {
+		Lib.debug(dbgThread, "Sleeping thread: " + currentThread.toString());
+
+		Lib.assertTrue(Machine.interrupt().disabled());
+
+		if (currentThread.status != statusFinished)
+			currentThread.status = statusBlocked;
+
+		runNextThread();
+	}
+runNextThread是这样的
+	private static void runNextThread() {
+		KThread nextThread = readyQueue.nextThread();
+		if (nextThread == null)
+			nextThread = idleThread;
+
+		nextThread.run();
+	}
+注意在run()里面的contextswitch之后有个currentThread.restoreState()
+在里面执行了
+		if (toBeDestroyed != null) {
+			toBeDestroyed.tcb.destroy();
+			toBeDestroyed.tcb = null;
+			toBeDestroyed = null;
+		}
+原来tcb的destroy是在这里进行的
+	public void destroy() {
+		// make sure the current TCB is correct
+		Lib.assertTrue(currentTCB != null
+				&& currentTCB.javaThread == Thread.currentThread());
+		// can't destroy current thread
+		Lib.assertTrue(this != currentTCB);
+		// thread must have started but not be destroyed yet
+		Lib.assertTrue(javaThread != null && !done);
+
+		// ensure AutoGrader.finishingCurrentThread() called authorizeDestroy()
+		Lib.assertTrue(nachosThread == toBeDestroyed);
+		toBeDestroyed = null;
+
+		this.done = true;
+		currentTCB.running = false;
+
+		this.interrupt();
+		currentTCB.waitForInterrupt();
+
+		this.javaThread = null;
+	}
+
+就是在这里把done设为ture的，之后两句有点看不懂
+		this.interrupt();
+		currentTCB.waitForInterrupt();
+感觉就是把自己弄成wait，然后就可以消失了
+
+
+到这里我发现，我们还有很多方法遇都没遇到过，比如KThread.join，囧
+
+
+第三部分：开始写
+(1)看到join，说要等另外一个线程结束再动，于是我想，一直yield不就行了么？就这么写了，不知道对不对。。。。
+这里有个逻辑陷阱：我不是要join的这个线程执行完么？怎么yield掉了？其实yield掉的是currentThread...要分清楚线程和对象之间的关系
+	public void join() {
+		Lib.debug(dbgThread, "Joining to thread: " + toString());
+
+		Lib.assertTrue(this != currentThread);
+
+		while (status != statusFinished)
+			yield();\\这两句看上去是自相矛盾的，其实不是，9神主页上有句话，the truth is not what you see
+	}
+然后诚牛说我busywaiting了，所以不能这么来，要用sleep()
+(2)这题比较有意思，说是要不用semaphore实现condition variable
+这题感觉就是把semaphore给抄一遍，这里给出禁止中断和恢复中断的两句话
+		boolean intStatus = Machine.interrupt().disable();
+		Machine.interrupt().restore(intStatus);
+
