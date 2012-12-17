@@ -15,4 +15,5 @@ echo .....
 rm -r build
 make telosb
 motelist
+sudo chmod 777 /dev/ttyUSB0
 make telosb install,$yourid /dev/ttyUSB0
