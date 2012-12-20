@@ -1,0 +1,14 @@
+For installing I added a few lines in the .docx which TA gave us. There's no serious problem.
+
+I wrote makeTiny.sh for Burning Images with ID.
+The runJava.sh along with Message.java and Displayer.java for data displaying.
+
+If you make use with these tools well, in your development all you must do is just ./makeTiny.sh ID and ./runJava.sh(with the sink node) in the terminal and everything is done.
+
+SO YOU SHOULD spend several minutes reading through my *.sh and *.java to understand what they are doing, it's rather easy. Ask me if there's confusion.
+Attention 1: I give up the mig java tool(So in my Makefile I commented out these) because I don't know how to use mig. So if you changed your packet format, you also must change the Message.java, then runjava.sh will take care of compiling and displaying.
+Attention 2: The $1 in runJava.sh is not for ID.
+
+htx
+
+
