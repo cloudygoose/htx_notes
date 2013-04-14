@@ -1,0 +1,86 @@
+package javac.parser;
+
+import java.io.InputStream;
+import javac.absyn.*;
+import javac.util.*;
+
+action code {:
+static javac.symbol.Symbol sym(String s) {
+return javac.symbol.Symbol.valueOf(s);
+}
+
+static javac.util.Position pos(int line, int column) {
+return javac.util.Position.valueOf(line, column);
+}
+:};
+
+parser code {:
+public void reportError(String message, Object info) {
+final StringBuffer m = new StringBuffer("Parsing error");
+if (info instanceof java_cup.runtime.Symbol) {
+final java_cup.runtime.Symbol s = (java_cup.runtime.Symbol) info;
+if (s.left >= 0) {
+m.append(" in line " + (s.left + 1));
+if (s.right >= 0) {
+m.append(", column " + (s.right + 1));
+}
+}
+}
+m.append(" : " + message);
+System.err.println(m);
+}
+
+public void reportFatalError(String message, Object info) {
+reportError(message, info);
+System.exit(1);
+}
+
+public Parser(InputStream inStream) {
+this(new Yylex(inStream));
+}
+:};
+
+terminal            NATIVE, RECORD, NEW, INT, STRING, CHAR, NULL, IF, ELSE, WHILE, FOR, RETURN, BREAK, CONTINUE;
+terminal            SEMICOLON, LBRACE, RBRACE, LPAREN, RPAREN, COMMA, LBRACKET, RBRACKET, LRBRACKET, ASSIGN, OR, AND;
+terminal            EQ, NEQ, LESS, LESS_EQ, GREATER, GREATER_EQ, PLUS, MINUS, MULTIPLY, DIVIDE, MODULO, NOT, DOT;
+terminal Integer    INTEGER;
+terminal String     ID, STRING_LITERAL;
+terminal Character  CHARACTER;
+non terminal TranslationUnit   translation_unit;
+non terminal ExternalDecl	   external_decl;
+non terminal PrototypeDecl 	   prototype_decl;
+non terminal FunctionDef       function_def;
+non terminal RecordDef  	   record_def;
+non terminal VariableDeclList  variable_decl_list;
+non terminal FunctionHead      function_head;
+non terminal ParameterList     parameter_list;
+non terminal ParameterDecl     parameter_decl;
+.......
+
+precedence right  ELSE;
+precedence left   LBRACKET;
+
+start with translation_unit;
+
+translation_unit ::= external_decl:e	{: RESULT = new TranslationUnit(pos(eleft, eright)); RESULT.add(e); :}
+                   | translation_unit:t external_decl:e	{: RESULT = t; t.add(e); :}
+                   ;
+
+external_decl ::= prototype_decl:p	{: RESULT = p; :}
+                | function_def:f	{: RESULT = f; :}
+                | record_def:r	{: RESULT = r; :}
+                ;
+
+prototype_decl ::= NATIVE:n function_head:f SEMICOLON	{: RESULT = new PrototypeDecl(pos(nleft, nright), f); :}
+                 ;
+
+function_def ::= function_head:f LBRACE   variable_decl_list:v stmt_list:s RBRACE	{: RESULT = new FunctionDef(pos(fleft, fright), f, v, s); :}
+               | function_head:f LBRACE:l                      stmt_list:s RBRACE	{: RESULT = new FunctionDef(pos(fleft, fright), f, new VariableDeclList(pos(lleft, lright)), s); :}
+               ;
+
+record_def ::= RECORD:r ID:i LBRACE variable_decl_list:v RBRACE	{: RESULT = new RecordDef(pos(rleft, rright), sym(i), v); :}
+             ;
+
+variable_decl_list ::= variable_decl:v	{: RESULT = new VariableDeclList(pos(vleft, vright)); RESULT.add(v); :}
+                     | variable_decl_list:l variable_decl:v	{: RESULT = l; l.add(v); :}
+                     ;

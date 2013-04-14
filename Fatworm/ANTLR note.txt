@@ -1,0 +1,111 @@
+﻿因为这应该是第一个note，所以先说句宏观的：
+首先建议大家先随意写一个Driver，把自己的parser包装好，然后所有的测试在Driver中进行，这样会比较清楚。
+
+ANTLR：
+不用管ANTLR的安装，直接使用这里parser文件夹下的文件就行，看看Test.java应该就懂了，自己试一试commonTree有哪些方法。
+对每个点，getType()之后会得到一个数字，这个数字对应Fatworm.tokens里面编号
+这里友情给大家一个打印语法树的最简单的函数
+	/*
+	 * log AST of t. please first set old as ""
+	 */
+	public void LogAST(CommonTree t, String old) {
+		Log.v(old + "_" + t.getType() + "->" + t.getText());
+		int child = t.getChildCount();
+		for (int i = 0;i < child;i++)
+			LogAST((CommonTree)t.getChild(i), old + "_." + t.getText());
+	}
+请自己打印出几个语法树看看。（Log那个类自己解决）
+
+陷入回忆：
+鹤：
+比方说这里有个commonTree
+SELECT select_expr* select_suffix*
+那么这里它会有很多个儿子，但我怎么去知道哪个儿子属于select_expr，哪个儿子属于suffix呢
+是不是要一个一个儿子取getType，看看是不是select_expr哪些所属的编号呢？
+有更好的办法不
+
+谢谢！
+
+剑：
+3好像是只能这样
+
+这样解析语法树会变成一件十分痛苦的事情，我个人觉得步骤大约有这样几步。
+对于每一个子句，你都得专门编写一个方法，比如对于select语句，你写一个transSelect来把它变成某一个logicalPlan，或者属于logicalPlan的某个你想要的东西（比如对于一个表达式，你得把它变成你自己能方便操作的一个表达式）。同时，你也要把这个子树的儿子传给别的trans方法来形成SelectPlan的一些儿子等等。
+然后会有一个比较烦的地方，就是鹤和剑邮件里谈的，我们会需要根据Token编号去判断某个儿子属于哪个子句，我这里建议大家还是多加了一个中间层，注意到我们有FatwormParser.tokenNames这个数组，我们可以用这个数组来判断一个commonTree是属于哪个子句的
+比如，你可以实现一个方法叫做isFromClause(commonTree t)，在里面用getType和tokenNames判断一下就行了。
+
+
+
+另外.g里也有一个稍微蛋疼的问题，再次陷入回忆：
+鹤：
+func
+  : AVG | COUNT | MIN | MAX | SUM
+  ;
+
+tbl_ref
+  : tbl_name (AS^ alias)?
+  | '('! subquery ')'! AS^ alias
+  ;
+
+tbl_name
+  : name
+  ;
+
+alias
+  : name
+  | func
+  ;
+我以为alias应该就是单纯一个字符串。。为什么语法里面有func。。。求解，谢谢！
+
+萧：
+首先，你不能剥夺 func 成为 alias 的权利
+比如 select count(1) as count from sometable; 我记得应该是可以的
+然后我们来看，ANTLR 里面，词法的部分是从上往下来的，所以 AVG : A V G 要在 ID: LETTER (LETTER | '0'..'9')* 之前被匹配
+所以呢，ID 里面没有 AVG 云云
+回到最开始，AVG 有成为 alias 的权利，所以就得把 func 加进去了
+
+鹤：
+哦，我了解了，总之就是因为解析顺序导致ID里没有AVG
+所以这里我们需要专门判断一下是不是AVG，然后把它当成ID来对待
+谢谢！！
+
+
+
+
+关于列名我也搞不懂，请看：
+鹤：
+昨天在想命名的问题一直没想通，不好意思今天只好到这儿来问一下了。。
+比如我有三个表A和B，C，他们都只有一列，分别叫做aa,bb,cc
+那么我这个很SB的query应该是合法的把
+		String str6 = "select * from (select * from A, B) as AB, C where AB.A.aa > C.cc";
+我本来是这么写的，但parse不过，因为不允许出现某某.某某.某某的情况
+把A.aa当中那个点去掉parse能过，不过当然就没有人知道是要表达什么了，这就是我的问题。。。
+
+现在我的推断是，如果要像我那样有subquery，就必须要把作为结果的列全部as掉，比如：
+select * from (select A.aa as Aaa, B.bb as Bbb from A, B) as AB, C where AB.Aaa > C.cc
+你们觉得呢？
+谢谢！
+
+剑：
+咩咩咩。。。
+鹤：
+嘎嘎嘎。。。
+剑：
+咩咩咩。。。
+（这里希望大家也自己用mysql感受一下）
+
+鹤：
+我目前是这样感觉的
+每个结果有很多列，每个列有两个属性：列名和所属表名
+比如我一开始的select * from A,B
+虽然，两个都叫做a，但表名不一样，所以还是不同的列
+而(select * from A,B) as AB之所以会错，是因为我把两个a的表名都搞成AB了，这样就有了两个相同的对(a,AB），（a,AB)，因此就重复了。
+
+所以我现在就把as看成一个修改表名的操作符而不是加上表名，这也能解释我一开始的问题，就是列名中会不会出现两个点。
+
+剑：
+跟我好像不太一样。
+咩咩咩。。。
+
+
+后来(刁哥！)发现了一个问题，语法中不允许(A,B) in (select ...)这种东西出现，但数据中有，我改了语法，并且并且重新生成两个parser的java，请各位更新一下

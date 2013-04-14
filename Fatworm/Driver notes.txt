@@ -1,0 +1,26 @@
+关于Driver
+对于speculation有疑惑的可以看看这里（谢谢msh）
+http://download.oracle.com/technetwork/java/javase/6/docs/zh/api/java/sql/package-summary.html
+对url有争论，我把他们的邮件贴一下好了
+二：
+可是它给的似乎是相对路径？还是jdbcurl的命名规则是我自己定的？
+剑：
+就是一个url，用的就是url的格式啊。我猜，你以为url是absolute/path/to/your/db/，是这个，其实url是jdbc:fatworm://absolute/path/to/your/db/这个。
+uri冒号前面是协议，这里是jdbc协议。所以jdbc协议的解释器会去执行后面的那串东西，协议后面的东西的语义是协议本身定的。jdbc好像是说，你注册你关心什么样的uri，然后如果匹配上就把协议后面的内容发给你处理。然后你需要注册fatworm，你可以看做fatworm是你自己的协议，所以后面有一个冒号。然后后面的语义都是你fatworm协议定的。这里面fatworm协议（虽然好像没有官方说过）就是说，我给你一个位置，你数据库生成所有的文件都要放在其下。
+二：
+哦。。懂了。。原来相对路径也可以处理的。。
+关于你说的fatworm协议的内容，要求文件目录一定要存在么？然后db那个文件是不是有可能存在的，如果存在的话就要用那个db文件？
+剑：
+是的呀，有可能存在，也有可能没有。没有的话，你就需要自行建立，如果有的话，你需要用那里的数据库。
+
+最后那个class.forName可能会有些疑惑，可以看看这个
+http://www.cnblogs.com/wjkaola123/archive/2009/11/23/1609119.html
+然后再次谢谢msh：哦对了
+Driver里面还要加一段
+static {
+try {
+java.sql.DriverManager.registerDriver(new Driver());
+} catch (SQLException e) {
+throw new RuntimeException("Can't register driver!");
+}
+}
