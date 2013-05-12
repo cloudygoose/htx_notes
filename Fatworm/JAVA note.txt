@@ -251,3 +251,6 @@ public class FatTreeMap<K, V> implements FatTreeMapInterface<K, V>{
 我发现我上限是这么写的，tsize是每个tuple在内存中所占的大小，单位字节
 limit = (int) (2 * Runtime.getRuntime().maxMemory() / 3 / (long) (40 + tsize));
 当时好像是做了很多实验然后得到了这样一个关于java内存使用的经验公式= =
+
+迫使JAVA做一下内存管理
+System.gc()
