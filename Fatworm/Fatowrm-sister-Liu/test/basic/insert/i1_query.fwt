@@ -1,0 +1,8 @@
+
+USE fatworm
+;
+
+SELECT * FROM i1
+;
+DROP DATABASE fatworm
+;

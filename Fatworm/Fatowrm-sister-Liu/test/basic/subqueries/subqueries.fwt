@@ -1,0 +1,62 @@
+select branch_city
+from branch
+;
+
+select assets
+from branch
+where branch_city = 'Brooklyn'
+;
+
+select branch_name
+from branch
+where assets > any (select assets
+                    from branch
+                    where branch_city = 'Brooklyn')
+;
+
+select branch_name
+from branch
+where assets > all (select assets
+                    from branch
+                    where branch_city = 'Brooklyn')
+;
+
+select branch_name
+from account
+group by branch_name
+having avg(balance) >= all(select avg(balance)
+                           from account
+                           group by branch_name)
+;
+
+
+select branch_name, avg_balance
+from (select branch_name, avg(balance) as avg_balance
+      from account
+      group by branch_name)
+      as branch_avg
+where avg_balance > 1200
+;
+
+select max(tot_balance)
+from (select branch_name, sum(balance) as tot_balance
+      from account
+      group by branch_name) 
+      as branch_total
+;
+
+insert into account (
+       select loan_number, branch_name, 200
+       from loan
+       where branch_name = 'Perryridge')
+;
+
+update account 
+set balance = (select amount 
+               from loan
+               where branch_name = 'Mianus')
+where balance >= 900
+;
+
+select * from account
+;

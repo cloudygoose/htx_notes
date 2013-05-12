@@ -1,0 +1,32 @@
+
+drop database nano
+;
+create database nano
+;
+use nano
+;
+create table InfraTest( k int, v char(10))
+;
+
+insert into InfraTest values(1, 'abc')
+;
+insert into InfraTest values(2, 'def')
+;
+insert into InfraTest values(2, 'abc')
+;
+insert into InfraTest values(3, 'def')
+;
+insert into InfraTest values(3, 'abcdef')
+;
+
+
+select * from InfraTest
+;
+
+
+select distinct k from InfraTest
+;
+
+
+select distinct v from InfraTest
+;

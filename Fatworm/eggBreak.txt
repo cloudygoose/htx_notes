@@ -1,0 +1,23 @@
+今天刁找我讨论了一下，发现了一个比较蛋疼的问题，这里跟大家分享一下
+1
+select e from c group by b  having avg(a） > 1
+所以你得把having和group by放在一起考虑
+
+
+2.
+可以有
+select sum(a), b from c
+后不接gorup语句
+这个问题本来就有，但
+
+我们害怕的是以下两种涉及到func情况
+select b, sum(a) + e from c
+select b from c where b < max(a)
+
+我们用grep "max(" *.fwt等把数据全部grep了一遍
+发现我们害怕的两种情况没有出现过，即：
+
+select func(a)中的func（a）必单独出现
+func(a)不会出现在where之中
+
+这应该来说是个好消息

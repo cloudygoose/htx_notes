@@ -1,0 +1,17 @@
+
+drop database nano
+;
+create database nano
+;
+use nano
+;
+create table Classes(
+	flag boolean)
+;
+insert into Classes values (true)
+;
+
+
+select * from Classes
+;
+

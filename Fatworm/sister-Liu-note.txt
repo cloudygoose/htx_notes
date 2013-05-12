@@ -1,0 +1,8 @@
+﻿FTP上放了一个直接连Mysql的sister，非常谢谢成牛的提供。
+请大家改一下MysqlClient.java里面的这一行
+conn = DriverManager.getConnection("jdbc:mysql://localhost/test?user=root&password=***");
+应该有改动是就是MysqlClient.java和Launcher.java大家自己看着改一下应该就能让自己的sister又能跑fatworm又能跑mysql了
+至于mysql的密码设置什么的请自己上网查了
+
+另外，sister运行时会报几个warning
+把log4j.properties放入bin下就行了。

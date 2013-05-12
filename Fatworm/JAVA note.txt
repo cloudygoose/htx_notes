@@ -1,0 +1,253 @@
+本来以为这次note里不会再谈JAVA了。。结果还是出了点东西。。。
+
+提醒：
+请用String来构造BigDecimal
+另外，谢谢诚牛的解释，ResultSet里的getObject方法要遵守以下mapping
+private String getFieldString(Object o, int type) {
+		if (o == null)
+			return "null";
+		switch (type) {
+		case java.sql.Types.INTEGER:
+			return ((Integer)o).toString();
+		case java.sql.Types.BOOLEAN:
+			return ((Boolean)o).toString();
+		case java.sql.Types.CHAR:
+		case java.sql.Types.VARCHAR:
+			return "'" + (String)o + "'";
+		case java.sql.Types.FLOAT:
+			return ((Float)o).toString();
+		case java.sql.Types.DATE:
+			return ((Date)o).toString();
+		case java.sql.Types.DECIMAL:
+			return ((BigDecimal)o).toString();
+		case java.sql.Types.TIMESTAMP:
+			return ((java.sql.Timestamp)o).toString();
+		case java.sql.Types.BIGINT:
+			return ((Long)o).toString();
+		default:
+			logger.error("Undefined Type Number " + type);
+			return null;
+		}
+	}
+
+
+谈谈Eclipse的Refactor
+
+这次最后是需要把东西都包在一个fatworm文件夹下的，如果有像我一样一开始没有这么做的同学，不要手动去改
+在你的包上面右键
+比如
+在plans包上右键，refactor->rename
+改成fatworm.plans，Eclipse就会帮你屌炸地全部改好，屌炸了
+
+
+谈谈JAVA反射
+
+希望这个帖最后能成为福利性质的一帖。
+一些时候我们要去找一个东西，比如在搞group的时候，我们要去找那些func函数，而且，要在很多地方里找，在select之后找，在having里找，甚至有时还要在subquery里找。。。
+这个怎么找想起来很容易，在程序里怎么找呢？我没有想出什么好方法，目前，我只想到给每个类（注意是每一个类）都编一个findFunc(List)方法，让他们自己递归地去找。
+不过问题是，万一我以后可能又一时兴起，想找某个子树有没有select怎么办呢？再给每个类编一个findSelect吗？是不是很累？
+这是我目前能想到的做法。
+不过JAVA反射能自动地帮我们做这个事情
+JAVA反射从功能上跟Python内省应该很像（说实话我对这两者都不熟悉），如果你不知道Python内省，那也没关系直接往下看好了。
+先来看大家看看我想实现怎么样的效果，这是我当前的树结构，大家可以看到里面有Scan，有Exp，有Plan，乱的一逼：
+OrderScan(
+    ORDERLIST:
+    ID:sumloc
+    ASC
+    SOURCE:
+    GroupScan(
+        ExpList:(
+            AsExp(
+                sum(
+                    ID:loc
+                )Func
+                sumloc
+            )AsExp
+            avg(
+                ID:loc
+            )Func
+            ID:name
+        )ExpList
+        GROUP by
+        ID:leader
+        SOURCE FROM
+        TableScan(
+            fatworm
+        )TableScan
+        HAVING:
+        AllExp(
+            VALUE:
+            min(
+                ID:loc
+            )Func
+            COP:>=
+            SOURCE:
+            GroupPlan(
+                ExpList:(
+                    min(
+                        ID:loc
+                    )Func
+                )ExpList
+                GROUP by
+                ID:leader
+                SOURCE FROM
+                FetchTablePlan(fatworm)
+            )GroupPlan
+        )AllExp
+    )GroupScan
+)OrderScan
+现在我想里面的所有func都给爬出来，即这四个东西：
+log : sum(
+    ID:loc
+)Func
+
+log : avg(
+    ID:loc
+)Func
+
+log : min(
+    ID:loc
+)Func
+
+log : min(
+    ID:loc
+)Func
+好了以上就是我想实现的东西，按我开始所说的，如果不用反射，我唯一能想到的办法就是给上面那堆乱七八糟的类全部多写一个方法，而现在使用反射，一个方法足矣
+请注意这两个方法是static的，就是说你放在你的Utility里面就能用了。
+import java.lang.reflect.*;
+	public static Object getter(Object obj, String att) throws Exception{
+		Method method = obj.getClass().getMethod("get" + att);
+	    //System.out.println(method.invoke(obj));
+	    return method.invoke(obj);
+	}
+	public static void getAllFunc(Object ob, LinkedList<FuncExp> list) throws Exception {
+		Field[] fields = ob.getClass().getDeclaredFields();
+   		if (ob instanceof FuncExp) {
+   			list.add((FuncExp)ob);
+   			//Log.v("!!find");
+   			return;
+   		}
+		for (int i = 0; i < fields.length; i++) {
+//          int mo = field[i].getModifiers();
+//          String priv = Modifier.toString(mo);  //About public private balalala
+            
+
+//            Class<?> type = field[i].getType();
+//            Log.v(type.getName() + " " +
+//                    field[i].getName() + ";");
+        	
+        	String a = fields[i].getName();
+        	String a1 = a.substring(0, 1).toUpperCase();
+        	a = a.substring(1, a.length());
+        	Object child = Log.getter(ob, a1 + a);
+        	//Log.v(a1 + a);
+        	if (child instanceof Scan) {
+        		Scan scan = (Scan)child;
+        		getAllFunc(scan, list);
+        	} else
+            if (child instanceof Plan) {
+            	Plan plan = (Plan)child;
+            	getAllFunc(plan, list);
+            } else
+           	if (child instanceof Expression) {
+           		Expression exp = (Expression)child;
+           		getAllFunc(exp, list);
+           	} else
+           	if (child instanceof ExpList) {
+           		ArrayList<Expression> l = ((ExpList)child).getExpList();
+           		//Log.v(((ExpList)child).getPrint(0));
+           		for (int j = 0;j < l.size();j++) {
+           			getAllFunc(l.get(j), list);
+           		}
+           	}
+        }
+请大家仔细看一看这个方法在干嘛，它其实是在自动地递归遍历一个对象全部儿子，把里面的func邱出来，就这么简单。
+不过这个方法不能是白用的（你可以直接运行一下看看exception），如果你再看仔细一点，其实你必须给你的每个类的儿子全部都加好get方法，比如：
+public class AllExp extends Expression {
+	Expression value;
+	String cop;
+	Plan source;
+	public Plan getSource() {
+		return source;
+	}
+	public String getCop() {
+		return cop;
+	}
+	public Expression getValue() {
+		return value;
+	}
+。。。。
+public class AliasPlan extends Plan {
+	private String alias;
+	private Plan source;
+	public Plan getSource() {
+		return source;
+	}
+	public String getAlias() {
+		return alias;
+	}
+等等，全部都要加好
+这里大家可能要骂我了，搞到最后不还是要多写一帮子get方法？我想说，第一这里确实是有tradeoff，自己定夺，第二其实给每个类加好get的Pattern应该是每个程序员应有的素质（好吧其实我也是今天才加上去），所以这其实不是负担。
+
+最后为了完整性，最后把我的框架帖一下：
+			Plan p = logicPlanner.translate(t);
+			Log.v("AST complete.");
+			Log.v("\n" + p.getPrint(0));
+
+			Scan scan = p.getScan();
+			Log.v("\n" + scan.getPrint(0));
+			LinkedList<FuncExp> list = new LinkedList<FuncExp>();
+			Log.getAllFunc(scan, list);
+			for (int i = 0;i < list.size();i++)
+				Log.v(list.get(i).getPrint(0));
+			
+			Log.v("...byebye...");
+
+我理解的反射，就是JAVA自己来帮你写JAVA程序。
+而且，反射我感觉不太符合OO的编程思想，更像是一种trick
+
+
+
+
+谈谈Integerface
+下面这个东西可以用来替换，我就是这么做的，比如我现在还没写B树，但我可以先把他的interface写好，然后写一个SBB树，
+等以后真的写好B树了，拿来换掉就行了
+package fatworm.index;
+
+public interface FatTreeMapInterface<K, V> {
+	public V get(K key);
+	public void put(K key, V value);
+}
+
+package fatworm.index;
+import java.util.*;
+public class FatTreeMap<K, V> implements FatTreeMapInterface<K, V>{
+	
+	@Override
+	public V get(K key) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void put(K key, V value) {
+		// TODO Auto-generated method stub
+		
+	}
+
+}
+
+
+最后给大家推荐一个类ByteBuffer，谢谢诚牛的推荐，感觉拿来存record之类的会非常方便，大家用着试试吧。
+				byte[] y = new byte[10];
+				y[0] = 0;
+				ByteBuffer buffer = ByteBuffer.wrap(y);
+				Log.v(buffer.get());
+				buffer.putInt(1);
+				Log.v(buffer.get());
+				Log.v(y[4]);
+
+王助教给出的内存计算公式：
+我发现我上限是这么写的，tsize是每个tuple在内存中所占的大小，单位字节
+limit = (int) (2 * Runtime.getRuntime().maxMemory() / 3 / (long) (40 + tsize));
+当时好像是做了很多实验然后得到了这样一个关于java内存使用的经验公式= =

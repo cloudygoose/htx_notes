@@ -1,0 +1,45 @@
+Serializable interface的用法
+把一个类存入文件
+            BB b = new BB(11, new CC("111")); 
+            FileOutputStream fos=new FileOutputStream("files\\11"); 
+            ObjectOutputStream oos=new ObjectOutputStream(fos); 
+            oos.writeObject(b); 
+            oos.flush(); 
+            oos.close();
+从文件中读出这个类
+	    FileInputStream ins = new FileInputStream("files\\11");
+	    ObjectInputStream ooi = new ObjectInputStream(ins);
+			
+            BB b = (BB)(ooi.readObject()); 
+            Log.v(b.s + b.c.ss);
+            ooi.close();
+class BB implements Serializable{
+	public CC c;
+	private static final long serialVersionUID = 1L;
+	Integer s;
+	public BB(Integer b, CC cc) {
+		s = b;
+		c = cc;
+	}
+}
+class CC implements Serializable{
+	private static final long serialVersionUID = 2L;
+	public String ss;
+	public CC(String c) {
+		ss = c;
+	}
+}
+所以，建议大家搞一个MetaDataMgr，每次开始的时候把它serialize出来，结束的时候把它serialize回去就行了
+至于record，怎么弄就随便了，我个人认为跟这个serialize毫无关系
+
+如果你不希望序列化某个域
+感谢诚牛和向哥的讨论
+java关键字Transient   
+  
+转自http://horst.sun.blog.163.com/blog/static/348849612007614494492/   
+  
+翻译自http://www.devx.com/tips/Tip/13726。   
+  
+Java的serialization提供了一种持久化对象实例的机制。当持久化对象时，可能有一个特殊的对象数据成员，我们不想   
+用serialization机制来保存它。为了在一个特定对象的一个域上关闭serialization，可以在这个域前加上关键字transient。   
+transient是Java语言的关键字，用来表示一个域不是该对象串行化的一部分。当一个对象被串行化的时候，transient型变量的值不包括在串行化的表示中，然而非transient型的变量是被包括进去的。  
