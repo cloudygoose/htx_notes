@@ -261,3 +261,7 @@ Xms for start, Xmx for max
 Then, in the program:
 			System.out.println(Runtime.getRuntime().maxMemory());
 you will see the results.
+three other method.
+totalMemory() £º
+maxMemory() £º
+freeMemory()  £º
