@@ -254,3 +254,10 @@ limit = (int) (2 * Runtime.getRuntime().maxMemory() / 3 / (long) (40 + tsize));
 
 迫使JAVA做一下内存管理
 System.gc()
+
+About how to set the memory:
+run configurations -> arguments -> VM arguments -> -Xms2048m -Xmx2048m
+Xms for start, Xmx for max
+Then, in the program:
+			System.out.println(Runtime.getRuntime().maxMemory());
+you will see the results.
