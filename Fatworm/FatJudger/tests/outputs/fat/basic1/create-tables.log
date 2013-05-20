@@ -1,0 +1,28 @@
+[Mon May 20 21:53:21 CST 2013] [Thread0] Connecting jdbc:fatworm://home/slhome/txh18/workspace/FatJudger/db?user=root&password=fatworm
+[Mon May 20 21:53:21 CST 2013] [Thread0] Connection established.
+[Mon May 20 21:53:21 CST 2013] [Thread0] Setting AUTO_COMMIT mode as false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: drop database fatwormBasic1
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: create database fatwormBasic1
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: use fatwormBasic1
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: create table test1(a int, b int, primary key(a))
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: drop table test1
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: create table test2(a int, b int, c int, d int, e int, f int)
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: drop table test2
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: create table test3(a int, b char(200), c datetime, d boolean, f decimal(10, 10), g timestamp, h varchar(10))
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: drop table test3
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: create table test4(a int not null auto_increment, b varchar(20) default 'aaaaa', primary key(a))
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: drop table test4
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread Time] 50
+[Mon May 20 21:53:21 CST 2013] [Total Time] 88
+[Mon May 20 21:53:21 CST 2013] [Result] Correct

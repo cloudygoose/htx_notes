@@ -1,0 +1,7 @@
+How to test single dataPoint:
+For Linux:
+java -cp Fatworm-htx.jar:bin/ org.acmclass.fatworm.test.TestTool -ts $1 -tm fat
+Then in the shell, Do something like this:./test.sh basic1
+For Windows:
+Similiar to Linux, change the -ts 15 to %1, then you can run.bat basic1
+I didn't test windows, if something's wrong, please tell me

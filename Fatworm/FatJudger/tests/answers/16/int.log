@@ -1,0 +1,37 @@
+[Sun May 13 16:07:58 CST 2012] [Thread0] Connecting jdbc:mysql://202.120.38.223:5772/?user=root&password=fatworm
+[Sun May 13 16:07:58 CST 2012] [Thread0] Connection established.
+[Sun May 13 16:07:58 CST 2012] [Thread0] Setting AUTO_COMMIT mode as false
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executing: drop database fatwormTypes
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executing: create database fatwormTypes
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executing: use fatwormTypes
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executing: create table test1(a int, b int, primary key(a))
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executing: insert into test1 values(1,9)
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executing: insert into test1 values(2,8)
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executing: insert into test1 values(3,7)
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executing: insert into test1 values(4,6)
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executing: insert into test1 values(5,5)
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executing: insert into test1 values(6,4)
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executing: insert into test1 values(7,3)
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executing: insert into test1 values(8,2)
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executing: insert into test1 values(9,1)
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executing: select * from test1
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:58 CST 2012] [Thread0] Query executed, begin to fetch and check result
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executing: select a from test1 order by b
+[Sun May 13 16:07:58 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:58 CST 2012] [Thread0] Query executed, begin to fetch and check result
+[Sun May 13 16:07:58 CST 2012] [Thread Time] 86
+[Sun May 13 16:07:58 CST 2012] [Total Time] 429

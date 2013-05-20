@@ -1,0 +1,44 @@
+[Mon May 20 20:56:16 CST 2013] [Thread0] Connecting jdbc:fatworm://home/slhome/txh18/workspace/FatJudger/db?user=root&password=fatworm
+[Mon May 20 20:56:16 CST 2013] [Thread0] Connection established.
+[Mon May 20 20:56:16 CST 2013] [Thread0] Setting AUTO_COMMIT mode as false
+[Mon May 20 20:56:16 CST 2013] [Thread0] Executing: DROP DATABASE ARNO
+[Mon May 20 20:56:16 CST 2013] [Thread0] isQuery? true
+[Mon May 20 20:56:16 CST 2013] [Thread0] Query executed, begin to fetch and check result
+[Mon May 20 20:56:16 CST 2013] [Thread0] Executing: CREATE DATABASE ARNO
+[Mon May 20 20:56:16 CST 2013] [Thread0] isQuery? true
+[Mon May 20 20:56:16 CST 2013] [Thread0] Query executed, begin to fetch and check result
+[Mon May 20 20:56:16 CST 2013] [Thread0] Executing: USE ARNO
+[Mon May 20 20:56:16 CST 2013] [Thread0] isQuery? true
+[Mon May 20 20:56:16 CST 2013] [Thread0] Query executed, begin to fetch and check result
+[Mon May 20 20:56:16 CST 2013] [Thread0] Executing: CREATE TABLE MODEL (
+[Mon May 20 20:56:16 CST 2013] [Thread0] MODEL_ID int NOT NULL DEFAULT 0,
+[Mon May 20 20:56:16 CST 2013] [Thread0] IS_MUTAGEN char(3),
+[Mon May 20 20:56:16 CST 2013] [Thread0] LUMO int,
+[Mon May 20 20:56:16 CST 2013] [Thread0] LOGP int,
+[Mon May 20 20:56:16 CST 2013] [Thread0] PRIMARY KEY (MODEL_ID)
+[Mon May 20 20:56:16 CST 2013] [Thread0] )
+[Mon May 20 20:56:16 CST 2013] [Thread0] isQuery? true
+[Mon May 20 20:56:16 CST 2013] [Thread0] Query executed, begin to fetch and check result
+[Mon May 20 20:56:16 CST 2013] [Thread0] Executing: CREATE TABLE ATOM (
+[Mon May 20 20:56:16 CST 2013] [Thread0] ATOM_ID varchar(10) NOT NULL,
+[Mon May 20 20:56:16 CST 2013] [Thread0] MODEL_ID int,
+[Mon May 20 20:56:16 CST 2013] [Thread0] ELEMENT char(2),
+[Mon May 20 20:56:16 CST 2013] [Thread0] TYPE char(3),
+[Mon May 20 20:56:16 CST 2013] [Thread0] CHARGE int,
+[Mon May 20 20:56:16 CST 2013] [Thread0] PRIMARY KEY (ATOM_ID)
+[Mon May 20 20:56:16 CST 2013] [Thread0] )
+[Mon May 20 20:56:16 CST 2013] [Thread0] isQuery? true
+[Mon May 20 20:56:16 CST 2013] [Thread0] Query executed, begin to fetch and check result
+[Mon May 20 20:56:16 CST 2013] [Thread0] Executing: CREATE TABLE BOND (
+[Mon May 20 20:56:16 CST 2013] [Thread0] BOND_ID int NOT NULL DEFAULT 0,
+[Mon May 20 20:56:16 CST 2013] [Thread0] MODEL_ID int,
+[Mon May 20 20:56:16 CST 2013] [Thread0] ATOM1 varchar(10),
+[Mon May 20 20:56:16 CST 2013] [Thread0] ATOM2 varchar(10),
+[Mon May 20 20:56:16 CST 2013] [Thread0] TYPE char(3),
+[Mon May 20 20:56:16 CST 2013] [Thread0] PRIMARY KEY (BOND_ID)
+[Mon May 20 20:56:16 CST 2013] [Thread0] )
+[Mon May 20 20:56:16 CST 2013] [Thread0] isQuery? true
+[Mon May 20 20:56:16 CST 2013] [Thread0] Query executed, begin to fetch and check result
+[Mon May 20 20:56:16 CST 2013] [Thread Time] 45
+[Mon May 20 20:56:16 CST 2013] [Total Time] 86
+[Mon May 20 20:56:16 CST 2013] [Result] Wrong Answer

@@ -1,0 +1,4 @@
+date: Mon May 20 20:56:16 CST 2013
+fat	create	Wrong Answer	86
+fat	insert	Wrong Answer	8440
+fat	query	Wrong Answer	15035

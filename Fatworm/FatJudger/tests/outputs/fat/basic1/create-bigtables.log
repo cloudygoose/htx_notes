@@ -1,0 +1,84 @@
+[Mon May 20 21:53:21 CST 2013] [Thread0] Connecting jdbc:fatworm://home/slhome/txh18/workspace/FatJudger/db?user=root&password=fatworm
+[Mon May 20 21:53:21 CST 2013] [Thread0] Connection established.
+[Mon May 20 21:53:21 CST 2013] [Thread0] Setting AUTO_COMMIT mode as false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: drop database fatwormBasic1
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: create database fatwormBasic1
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: use fatwormBasic1
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: create table test1(a int, b int, primary key(a))
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: drop table test1
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: create table test2(a1 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a2 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a3 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a4 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a5 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a6 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a7 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a8 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a9 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a10 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a11 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a12 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a13 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a14 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a15 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a16 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a17 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a18 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a19 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a20 int not null auto_increment,
+[Mon May 20 21:53:21 CST 2013] [Thread0] primary key (a20))
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: drop table test2
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: create table test3(a1 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a2 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a3 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a4 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a5 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a6 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a7 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a8 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a9 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a10 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a11 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a12 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a13 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a14 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a15 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a16 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a17 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a18 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a19 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] a20 int,
+[Mon May 20 21:53:21 CST 2013] [Thread0] b1 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b2 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b3 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b4 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b5 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b6 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b7 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b8 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b9 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b10 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b11 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b12 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b13 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b14 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b15 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b16 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b17 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b18 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b19 varchar(50),
+[Mon May 20 21:53:21 CST 2013] [Thread0] b20 varchar(50)
+[Mon May 20 21:53:21 CST 2013] [Thread0] )
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread0] Executing: drop table test3
+[Mon May 20 21:53:21 CST 2013] [Thread0] isQuery? false
+[Mon May 20 21:53:21 CST 2013] [Thread Time] 16
+[Mon May 20 21:53:21 CST 2013] [Total Time] 23
+[Mon May 20 21:53:21 CST 2013] [Result] Correct

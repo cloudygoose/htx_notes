@@ -1,0 +1,23 @@
+[Sun May 13 16:07:59 CST 2012] [Thread0] Connecting jdbc:mysql://202.120.38.223:5772/?user=root&password=fatworm
+[Sun May 13 16:07:59 CST 2012] [Thread0] Connection established.
+[Sun May 13 16:07:59 CST 2012] [Thread0] Setting AUTO_COMMIT mode as false
+[Sun May 13 16:07:59 CST 2012] [Thread0] Executing: drop database fatwormTypes
+[Sun May 13 16:07:59 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:59 CST 2012] [Thread0] Executing: create database fatwormTypes
+[Sun May 13 16:07:59 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:59 CST 2012] [Thread0] Executing: use fatwormTypes
+[Sun May 13 16:07:59 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:59 CST 2012] [Thread0] Executing: create table test1(a int, d decimal(40))
+[Sun May 13 16:07:59 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:59 CST 2012] [Thread0] Executing: insert into test1 values(1,1234567891011121314)
+[Sun May 13 16:07:59 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:59 CST 2012] [Thread0] Executing: insert into test1 values(2,123456789101112131415161718192021223)
+[Sun May 13 16:07:59 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:59 CST 2012] [Thread0] Executing: select * from test1 where d>10
+[Sun May 13 16:07:59 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:59 CST 2012] [Thread0] Query executed, begin to fetch and check result
+[Sun May 13 16:07:59 CST 2012] [Thread0] Executing: select d from test1 order by d
+[Sun May 13 16:07:59 CST 2012] [Thread0] Executed.
+[Sun May 13 16:07:59 CST 2012] [Thread0] Query executed, begin to fetch and check result
+[Sun May 13 16:07:59 CST 2012] [Thread Time] 57
+[Sun May 13 16:07:59 CST 2012] [Total Time] 113
