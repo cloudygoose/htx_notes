@@ -5,3 +5,13 @@ Then in the shell, Do something like this:./test.sh basic1
 For Windows:
 Similiar to Linux, change the -ts 15 to %1, then you can run.bat basic1
 I didn't test windows, if something's wrong, please tell me
+
+============================msh>_<============================
+I run 'sort', Sister gives 5min and Judger gives 20min
+I checked Judger's source, and found:
+if(statement.getResultSet()==null || statement.getResultSet().getMetaData()==null ||statement.getResultSet().getMetaData().getColumnCount()==0){
+                            isQuery=false;
+                        }
+That's to say, statement.getResultSet() is executed three times meaninglessly...
+Well, if the query is gorup or order, in getResultSet() I will do everything, so this is really &*&#@*#@
+If you meet the same problem, open the scan when the resultSet does next() ^_^
