@@ -1,0 +1,11 @@
+主要网页：
+http://www.speech.sri.com/projects/srilm/manpages/
+==============================安装===============================
+我遇到的错是在make时，最简单的做法是设置环境变量
+NO_ICONV=1
+然后我在装libiconv的时候，装到了/usr/local/lib目录下，为了跑SRILM/bin/i686-m64下的程序，需要在一般的路径/usr/lib下做个链接
+sudo ln -s /usr/local/lib/libiconv.so.2 /usr/lib/libiconv.so.2
+然后就能跑了
+然后的一个问题是，我不想跑程序时必须跑到SRILM/bin/i686-m64下，于是在
+.bashrc的最后一行里加入
+export PATH=$PATH:/home/slhome/txh18/software/SRILM/bin/i686-m64
