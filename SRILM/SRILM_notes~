@@ -1,11 +1,66 @@
-主要网页：
+main web-pages:
 http://www.speech.sri.com/projects/srilm/manpages/
-==============================安装===============================
-我遇到的错是在make时，最简单的做法是设置环境变量
-NO_ICONV=1
-然后我在装libiconv的时候，装到了/usr/local/lib目录下，为了跑SRILM/bin/i686-m64下的程序，需要在一般的路径/usr/lib下做个链接
-sudo ln -s /usr/local/lib/libiconv.so.2 /usr/lib/libiconv.so.2
-然后就能跑了
-然后的一个问题是，我不想跑程序时必须跑到SRILM/bin/i686-m64下，于是在
-.bashrc的最后一行里加入
-export PATH=$PATH:/home/slhome/txh18/software/SRILM/bin/i686-m64
+I follow the install steps on the web
+==============================install===============================
+In make, I find I can't find the installed iconv-lib, so I need to set the environment variable(found in the INSTALL manual, Kai pointed to us that it's a environment variable)
+	NO_ICONV=1
+When I install iconv, I installed it to /usr/local/lib，to run programs in SRILM/bin/i686-m64, I need to make links to /usr/lib
+	sudo ln -s /usr/local/lib/libiconv.so.2 /usr/lib/libiconv.so.2
+Add bin folder to $PATH
+Add this line to the end of .bashrc
+	export PATH=$PATH:/home/slhome/txh18/software/SRILM/bin/i686-m64
+==============================Kai's scripts============================
+It's put at
+	scp -P 219 202.120.38.148:/slfs2/users/ky219/asr/wrdseg/lms/v0/README .
+What I need is
+	./README
+	./train_tg_prune.sh
+	./weibo.50k.wlist
+	./textsources/testset.dat
+	./textsources/weibo.dat
+===ngram-count===
+Most Important options:
+	-order n
+Set the maximal order (length) of N-grams to count. This also determines the order of the estimated LM, if any. The default order is 3.
+	-vocab file
+Read a vocabulary from file. Subsequently, out-of-vocabulary words in both counts or text are replaced with the unknown-word token. If this option is not specified all words found are implicitly added to the vocabulary.
+	-write-vocab file
+Write the vocabulary built in the counting process to file.
+	-text textfile
+Generate N-gram counts from text file. textfile should contain one sentence unit per line. Begin/end sentence tokens are added if not already present. Empty lines are ignored.
+	-write file
+Write total counts to file.
+	-sort
+Output counts in lexicographic order, as required for ngram-merge(1).
+EXAMPLE:
+	ngram-count -text test_htx.dat -write1 htx_1_gram
+I get:
+<s>	3
+Hello	1
+my	1
+name	1
+is	1
+Hetianxing	1
+</s>	3
+I	2
+love	2
+you	2
+not	1
+only	1
+
+ngram-count -text test_htx.dat -write2 htx_2_gram
+I get:
+<s> Hello	1
+<s> I	2
+Hello my	1
+my name	1
+name is	1
+is Hetianxing	1
+Hetianxing </s>	1
+I love	2
+love you	1
+love not	1
+you </s>	2
+not only	1
+only you	1
+
