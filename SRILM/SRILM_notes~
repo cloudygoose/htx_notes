@@ -9,6 +9,34 @@ When I install iconv, I installed it to /usr/local/lib，to run programs in SRIL
 Add bin folder to $PATH
 Add this line to the end of .bashrc
 	export PATH=$PATH:/home/slhome/txh18/software/SRILM/bin/i686-m64
+========================Issues's about the ARPA LM file===============
+\data\
+ngram 1=n1
+ngram 2=n2
+...
+ngram N=nN
+
+\1-grams:
+p	w		[bow]
+...
+
+\2-grams:
+p	w1 w2		[bow]
+...
+
+\N-grams:
+p	w1 ... wN
+...
+
+\end\
+
+Backoff weights are required only for those N-grams that form a prefix of longer N-grams in the model. The highest-order N-grams in particular will not need backoff weights (they would be useless).
+
+Since log(0) (minus infinity) has no portable representation, such values are mapped to a large negative number. However, the designated dummy value (-99 in SRILM) is interpreted as log(0) when read back from file into memory.
+
+unigram: log p(wi)     wi   log\alpha(wi)
+bigram:  log p(w_i|w_{i-1})  w_{i-1}w_i   log\alpha(w_{i-1}w_i)
+trigram: log p(w_i|w_{i-2}w_{i-1})  w_{i-2}w_{i-1}w_i
 ==============================Kai's scripts============================
 It's put at
 	scp -P 219 202.120.38.148:/slfs2/users/ky219/asr/wrdseg/lms/v0/README .
@@ -19,20 +47,24 @@ What I need is
 	./textsources/testset.dat
 	./textsources/weibo.dat
 ===ngram-count===
-Most Important options:
+Most Important count options:
+	-debug level
+Set debugging output from estimated LM at level. Level 0 means no debugging. Debugging messages are written to stderr.
 	-order n
 Set the maximal order (length) of N-grams to count. This also determines the order of the estimated LM, if any. The default order is 3.
 	-vocab file
 Read a vocabulary from file. Subsequently, out-of-vocabulary words in both counts or text are replaced with the unknown-word token. If this option is not specified all words found are implicitly added to the vocabulary.
 	-write-vocab file
 Write the vocabulary built in the counting process to file.
+	-gtnmin count
+where n is 1, 2, 3, 4, 5, 6, 7, 8, or 9. Set the minimal count of N-grams of order n that will be included in the LM. All N-grams with frequency lower than that will effectively be discounted to 0. If n is omitted the parameter for N-grams of order > 9 is set. NOTE: This option affects not only the default Good-Turing discounting but the alternative discounting methods described below as well.
 	-text textfile
 Generate N-gram counts from text file. textfile should contain one sentence unit per line. Begin/end sentence tokens are added if not already present. Empty lines are ignored.
 	-write file
 Write total counts to file.
 	-sort
 Output counts in lexicographic order, as required for ngram-merge(1).
-EXAMPLE:
+=EXAMPLE=
 	ngram-count -text test_htx.dat -write1 htx_1_gram
 I get:
 <s>	3
@@ -48,7 +80,7 @@ you	2
 not	1
 only	1
 
-ngram-count -text test_htx.dat -write2 htx_2_gram
+	ngram-count -text test_htx.dat -write2 htx_2_gram
 I get:
 <s> Hello	1
 <s> I	2
@@ -63,4 +95,49 @@ love not	1
 you </s>	2
 not only	1
 only you	1
+
+Notes About the LM options:
+	-lm lmfile
+Estimate a language model from the total counts and write it to lmfile. This option applies to several LM model types (see below) but the default is to estimate a backoff N-gram model, and write it in ngram-format(5).
+=EXAMPLE PURE MLE MODEL=
+related:
+http://www.speech.sri.com/pipermail/srilm-user/2004q2/000218.html
+test_data:
+<s> I love you </s>
+use:
+	ngram-count -write allcnt -order 3 -debug 2 -text test_htx.dat -gt1max 0 -gt1min 1 -gt2max 0 -gt2min 1 -gt3max 0 -gt3min 1 -lm lmtest
+I get:
+
+\data\
+ngram 1=6
+ngram 2=8
+ngram 3=6
+
+\1-grams:
+-0.60206	</s>
+-99	<s>	-7.277691
+-0.90309	Alice	-99
+-0.60206	Bob	-7.180781
+-0.90309	Mary	-99
+-0.60206	loves	-7.277691
+
+\2-grams:
+-0.30103	<s> Alice	0
+-0.30103	<s> Bob	-99
+0	Alice loves	-99
+-0.30103	Bob </s>
+-0.30103	Bob loves	-99
+0	Mary </s>
+-0.30103	loves Bob	-99
+-0.30103	loves Mary	0
+
+\3-grams:
+0	<s> Alice loves
+0	<s> Bob loves
+0	loves Bob </s>
+0	loves Mary </s>
+0	Alice loves Bob
+0	Bob loves Mary
+
+\end\
 
