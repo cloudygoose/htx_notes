@@ -97,6 +97,7 @@ not only	1
 only you	1
 
 Notes About the LM options:
+1.The outputFile is in backoff format, even we use a interpolate model. Why? check SURVEYP19, because when count=0, the MLE component is just 0, so there's only (1-\namblda)*(p(^{i-1}_{i-n+2}), so it is consistent with the backoff format.
 	-lm lmfile
 Estimate a language model from the total counts and write it to lmfile. This option applies to several LM model types (see below) but the default is to estimate a backoff N-gram model, and write it in ngram-format(5).
 	the default discounting method
@@ -106,9 +107,12 @@ default If the user does not specify any discounting options, ngram-count uses G
 related:
 http://www.speech.sri.com/pipermail/srilm-user/2004q2/000218.html
 test_data:
-<s> I love you </s>
+<s> Alice loves Bob </s>
+<s> Alice loves Bob very much </s>
+<s> Bob loves Mary </s>
 use:
 	ngram-count -write allcnt -order 3 -debug 2 -text test_htx.dat -gt1max 0 -gt1min 1 -gt2max 0 -gt2min 1 -gt3max 0 -gt3min 1 -lm lmtest
+The gtmin and gtmax are wrote to make sure the GT doesn't do discount.
 I get:
 
 \data\
