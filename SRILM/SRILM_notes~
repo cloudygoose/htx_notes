@@ -158,7 +158,8 @@ Goose
 Now waiting for reply.
 5.Is -interpolate -kndiscount and -kndiscount the same?
 No, they produce different results.
-
+6.In debug info, why does something like 'discarded 15,004,868 2-gram probs discounted to zero' happen?
+That's because -gtmin , try -gtnmin 1 to disable this discounting.
 
 About the options:
 	-lm lmfile
@@ -225,18 +226,29 @@ time ngram-count -vocab weibo.50k.wlist -order 1 -gt1min 1 -kndiscount1 -debug 1
 result:
 total memory : 3113168 (2.96895M)
 total time : 5m52.63s
+debug 1
 
+
+time ngram-count -vocab weibo.50k.wlist -order 2 -gt1min 1 -gt2min 2 -kndiscount1 -kndiscount2 -debug 1 -interpolate -text textsources/weibo.dat -lm weiboLM-2-GRAM -memuse
+
+result :
+total memory 1383665856 (1319.57M), used 767072752 (731.538M), wasted 616593104 (588.029M)
+total time : 8m56.66s
+debug 2
+
+==========================================debugs=============================================
+
+debug 1 : 
 using ModKneserNey for 1-grams
 Kneser-Ney smoothing 1-grams
-n1 = 194
-n2 = 205
-n3 = 171
-n4 = 173
-D1 = 0.321192
-D2 = 1.19624
-D3+ = 1.70021
 warning: 2.09568e-07 backoff probability mass left for "" -- disabling interpolation
 discarded 2 1-gram probs predicting pseudo-events
 warning: distributing 4.33012e-05 left-over probability mass over 242 zeroton words
 
+debug 2 : 
+discarded 2 2-gram contexts containing pseudo-events
+discarded 32987 2-gram probs predicting pseudo-events
+discarded 15,004,868 2-gram probs discounted to zero
+writing 50002 1-grams
+writing 16,777,635 2-grams
 
