@@ -38,6 +38,9 @@ unigram: log p(wi)     wi   log\alpha(wi)
 bigram:  log p(w_i|w_{i-1})  w_{i-1}w_i   log\alpha(w_{i-1}w_i)
 trigram: log p(w_i|w_{i-2}w_{i-1})  w_{i-2}w_{i-1}w_i
 ==============================Kai's scripts============================
+1.The readme only has three parameters?
+The README may be wrong, I guess the $3 should be ./textsources/testset.dat, and $4 should be ./weiboLM
+
 It's put at
 	scp -P 219 202.120.38.148:/slfs2/users/ky219/asr/wrdseg/lms/v0/README .
 What I need is
@@ -97,7 +100,67 @@ not only	1
 only you	1
 
 Notes About the LM options:
-1.The outputFile is in backoff format, even we use a interpolate model. Why? check SURVEYP19, because when count=0, the MLE component is just 0, so there's only (1-\namblda)*(p(^{i-1}_{i-n+2}), so it is consistent with the backoff format.
+1.How does the backoff lm format represent the interpolate model??
+The outputFile is in backoff format, even we use a interpolate model. Why? check SURVEYP19, because when count=0, the MLE component is just 0, so there's only (1-\namblda)*(p(^{i-1}_{i-n+2}), so it is consistent with the backoff format.
+2.From Mail List - Why is C(<s>) always zero??
+> Hello,
+>
+> is there a reason why the unigram count of the auto-prepended sentence 
+> start tag <s> is always zero? As can be seen from the output below, 
+> the log probabilities are calculated counting the sentence send tags 
+> </s> but not the start tags. Or have I just missed something horribly 
+> obvious?
+
+You are confusing a token's frequency in the text with the probability 
+in the model.
+Because <s> only occurs as part of an ngram's history, but never as the 
+token being predicted, its probability is 0.  If P(<s>) were > 0, then 
+(via backoff) you would also have P(<s> | ...) > 0 and the sum of 
+probabilities over all allowed words would be < 1.
+
+If you want the unigram probability of a sentence boundary, use the </s> 
+tag.
+
+Andreas
+Well, I guess <s> is somewhat special, we can't regard it as a normal word.
+3.How is the parameter D in the KN discount set?
+Kneser-Ney discounting. This is similar to absolute discounting in that the discounted probability is computed by subtracting a constant D from the N-gram count. The options -kndiscount and -ukndiscount differ as to how this constant is computed. 
+The original Kneser-Ney discounting (-ukndiscount) uses one discounting constant for each N-gram order. These constants are estimated as
+
+	D = n1 / (n1 + 2*n2)
+
+where n1 and n2 are the total number of N-grams with exactly one and two counts, respectively. 
+Chen and Goodman's modified Kneser-Ney discounting (-kndiscount) uses three discounting constants for each N-gram order, one for one-count N-grams, one for two-count N-grams, and one for three-plus-count N-grams:
+
+	Y   = n1/(n1+2*n2)
+	D1  = 1 - 2Y(n2/n1)
+	D2  = 2 - 3Y(n3/n2)
+	D3+ = 3 - 4Y(n4/n3)
+4.When I'm testing -kndiscount? Why the counts in the debug info not equal with the actual data?
+Warning:
+SRILM implements Kneser-Ney discounting by actually modifying the counts of the lower order N-grams. Thus, when the -write option is used to write the counts with -kndiscount or -ukndiscount, only the highest order N-grams and N-grams that start with <s> will have their regular counts c(a_z), all others will have the modified counts n(*_z) instead. See Warning 2 in the next section.
+Warning 2
+When -kndiscount or -ukndiscount options are used, the count file contains modified counts. Specifically, all N-grams of the maximum order, and all N-grams that start with <s> have their regular counts c(a_z), but shorter N-grams that do not start with <s> have the number of unique words preceding them n(*a_z) instead. See the description of -kndiscount and -ukndiscount for details.
+These leads to a strange problem:
+MAILING TO MAILLIST
+Hello
+When I use order 2 kndiscount, I get a unigram model and a bigram model
+Then I use order 1 kndiscount, I also get a unigram
+But these two unigrams are different, I read the 
+http://www.speech.sri.com/projects/srilm/manpages/ngram-discount.7.html
+It seems that this has to do with some implementation issue, what i want to ask is, is the unigram I get in the order 2 kndiscount uncorrect?
+
+Because if I use order1 Katz discount and order 2 Katz discount, the two unigrams are the same, so I think I need to treat kndiscount result with caution.
+
+Many thanks
+Goose
+
+Now waiting for reply.
+5.Is -interpolate -kndiscount and -kndiscount the same?
+No, they produce different results.
+
+
+About the options:
 	-lm lmfile
 Estimate a language model from the total counts and write it to lmfile. This option applies to several LM model types (see below) but the default is to estimate a backoff N-gram model, and write it in ngram-format(5).
 	the default discounting method
@@ -113,6 +176,9 @@ test_data:
 use:
 	ngram-count -write allcnt -order 3 -debug 2 -text test_htx.dat -gt1max 0 -gt1min 1 -gt2max 0 -gt2min 1 -gt3max 0 -gt3min 1 -lm lmtest
 The gtmin and gtmax are wrote to make sure the GT doesn't do discount.
+There is another way to explicitly use the addsmooth model.
+	ngram-count -write allcnt -order 3 -debug 1 -addsmooth 0 -text test_htx.dat -gt1min 1 -gt2min 1 -gt3min 1 -lm lmtest
+Beware the default gt3min is 2, so we need to set it even if we use the addsmooth smoothing method.
 I get:
 
 \data\
@@ -147,4 +213,30 @@ ngram 3=6
 0	Bob loves Mary
 
 \end\
+
+===EXPERIMENT1===
+1.
+wocab : 50k words 
+text : 310,660,648 lines 
+model : 1-gram
+
+time ngram-count -vocab weibo.50k.wlist -order 1 -gt1min 1 -kndiscount1 -debug 1 -interpolate -text textsources/weibo.dat -lm weiboLM-1-GRAM -memuse
+
+result:
+total memory : 3113168 (2.96895M)
+total time : 5m52.63s
+
+using ModKneserNey for 1-grams
+Kneser-Ney smoothing 1-grams
+n1 = 194
+n2 = 205
+n3 = 171
+n4 = 173
+D1 = 0.321192
+D2 = 1.19624
+D3+ = 1.70021
+warning: 2.09568e-07 backoff probability mass left for "" -- disabling interpolation
+discarded 2 1-gram probs predicting pseudo-events
+warning: distributing 4.33012e-05 left-over probability mass over 242 zeroton words
+
 
