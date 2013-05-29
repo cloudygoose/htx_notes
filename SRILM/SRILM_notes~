@@ -102,6 +102,7 @@ only you	1
 Notes About the LM options:
 1.How does the backoff lm format represent the interpolate model??
 The outputFile is in backoff format, even we use a interpolate model. Why? check SURVEYP19, because when count=0, the MLE component is just 0, so there's only (1-\namblda)*(p(^{i-1}_{i-n+2}), so it is consistent with the backoff format.
+
 2.From Mail List - Why is C(<s>) always zero??
 > Hello,
 >
@@ -123,6 +124,7 @@ tag.
 
 Andreas
 Well, I guess <s> is somewhat special, we can't regard it as a normal word.
+
 3.How is the parameter D in the KN discount set?
 Kneser-Ney discounting. This is similar to absolute discounting in that the discounted probability is computed by subtracting a constant D from the N-gram count. The options -kndiscount and -ukndiscount differ as to how this constant is computed. 
 The original Kneser-Ney discounting (-ukndiscount) uses one discounting constant for each N-gram order. These constants are estimated as
@@ -136,29 +138,34 @@ Chen and Goodman's modified Kneser-Ney discounting (-kndiscount) uses three disc
 	D1  = 1 - 2Y(n2/n1)
 	D2  = 2 - 3Y(n3/n2)
 	D3+ = 3 - 4Y(n4/n3)
+
 4.When I'm testing -kndiscount? Why the counts in the debug info not equal with the actual data?
 Warning:
 SRILM implements Kneser-Ney discounting by actually modifying the counts of the lower order N-grams. Thus, when the -write option is used to write the counts with -kndiscount or -ukndiscount, only the highest order N-grams and N-grams that start with <s> will have their regular counts c(a_z), all others will have the modified counts n(*_z) instead. See Warning 2 in the next section.
 Warning 2
 When -kndiscount or -ukndiscount options are used, the count file contains modified counts. Specifically, all N-grams of the maximum order, and all N-grams that start with <s> have their regular counts c(a_z), but shorter N-grams that do not start with <s> have the number of unique words preceding them n(*a_z) instead. See the description of -kndiscount and -ukndiscount for details.
-These leads to a strange problem:
+
+5.Can I use the unigram model in the order-2 kndiscount output?
 MAILING TO MAILLIST
 Hello
 When I use order 2 kndiscount, I get a unigram model and a bigram model
 Then I use order 1 kndiscount, I also get a unigram
 But these two unigrams are different, I read the 
 http://www.speech.sri.com/projects/srilm/manpages/ngram-discount.7.html
+(The same situation happens when I try order-3 and order-2)
 It seems that this has to do with some implementation issue, what i want to ask is, is the unigram I get in the order 2 kndiscount uncorrect?
-
 Because if I use order1 Katz discount and order 2 Katz discount, the two unigrams are the same, so I think I need to treat kndiscount result with caution.
-
 Many thanks
 Goose
+Andreas Stolcke:
+It is one of the distinguishing features of KN discounting that the lower-order (backoff) distributions are estimated differently from the highest-order distribution.
+You are not supposed to use the unigram distribution in a KN-smoothed bigram by itself. 
+So what you're seeing is completely expected and correct.   For a detailed explanation see the Chen and Goodman paper.
 
-Now waiting for reply.
-5.Is -interpolate -kndiscount and -kndiscount the same?
+6.Is -interpolate -kndiscount and -kndiscount the same?
 No, they produce different results.
-6.In debug info, why does something like 'discarded 15,004,868 2-gram probs discounted to zero' happen?
+
+7.In debug info, why does something like 'discarded 15,004,868 2-gram probs discounted to zero' happen?
 That's because -gtmin , try -gtnmin 1 to disable this discounting.
 
 About the options:
@@ -166,6 +173,11 @@ About the options:
 Estimate a language model from the total counts and write it to lmfile. This option applies to several LM model types (see below) but the default is to estimate a backoff N-gram model, and write it in ngram-format(5).
 	the default discounting method
 default If the user does not specify any discounting options, ngram-count uses Good-Turing discounting (aka Katz smoothing) by default. The Good-Turing estimate states that for any N-gram that occurs r times, we should pretend that it occurs r' times where  r' = (r+1) n[r+1]/n[r]
+
+===ngram===
+important options:
+	-prune threshold
+Prune N-gram probabilities if their removal causes (training set) perplexity of the model to increase by less than threshold relative.
 
 =EXAMPLE PURE MLE MODEL=
 related:
@@ -215,12 +227,14 @@ ngram 3=6
 
 \end\
 
-===EXPERIMENT1===
+===EXPERIMENT1:redo Kai's script===
 1.
+---DATA---
 wocab : 50k words 
 text : 310,660,648 lines 
 model : 1-gram
 
+------train-1-kn------
 time ngram-count -vocab weibo.50k.wlist -order 1 -gt1min 1 -kndiscount1 -debug 1 -interpolate -text textsources/weibo.dat -lm weiboLM-1-GRAM -memuse
 
 result:
@@ -228,13 +242,44 @@ total memory : 3113168 (2.96895M)
 total time : 5m52.63s
 debug 1
 
-
-time ngram-count -vocab weibo.50k.wlist -order 2 -gt1min 1 -gt2min 2 -kndiscount1 -kndiscount2 -debug 1 -interpolate -text textsources/weibo.dat -lm weiboLM-2-GRAM -memuse
+------train-2-kn--------
+time ngram-count -vocab weibo.50k.wlist -order 2 -gt1min 1 -gt2min 2 -kndiscount1 -kndiscount2 -debug 1 -interpolate -text textsources/weibo.dat -lm weibo.bigram -memuse
 
 result :
+computer:lagrange
 total memory 1383665856 (1319.57M), used 767072752 (731.538M), wasted 616593104 (588.029M)
 total time : 8m56.66s
+weibo.bigram with 16,827,647 lines
 debug 2
+
+-------train-3-kn--------
+(time ngram-count -vocab weibo.50k.wlist -order 3 -gt1min 1 -gt2min 2 -gt3min 2 -kndiscount1 -kndiscount2 -kndiscount3 -debug 1 -interpolate -text textsources/weibo.dat -lm weibo-3-GRAM -memuse 1>> $weibo-3-GRAM.LOG 2>> $weibo-3-GRAM.LOG) 2> weibo-3-GRAM.time
+
+result1 :
+computer:lagrange
+unknown, due to memory full (guess : using swap) and electricity fault
+But I have Kai's result.
+weibo.trigram with 75,153,206 lines
+result2 :
+computer:neuman
+now running
+
+-----prune-2-kn----------
+time ngram -memuse -debug 1 -lm weibo.bigram -write-lm weibo.bigram.1.0e-7 -order 3 -prune 1.0e-7
+result :
+total memory 246081452 (234.682M), used 20196124 (19.2605M), wasted 225885328 (215.421M)
+total time : 15.358s
+weibo.bigram.1.0e-7 with 2304534 lines
+
+-----prune-3-kn----------
+time ngram -memuse -debug 1 -lm weibo.trigram -write-lm weibo.trigram.1.0e-7 -order 3 -prune 1.0e-7
+
+result:
+computer:lagrange
+total memory 1390182208 (1325.78M), used 85936408 (81.9553M), wasted 1304245800 (1243.83M)
+total time : 1m33.454s
+weibo.trigram.1.0e-7 4702423 lines
+debug 4
 
 ==========================================debugs=============================================
 
@@ -251,4 +296,28 @@ discarded 32987 2-gram probs predicting pseudo-events
 discarded 15,004,868 2-gram probs discounted to zero
 writing 50002 1-grams
 writing 16,777,635 2-grams
+
+debug 4 : 
+reading 50002 1-grams
+reading 16093999 2-grams
+reading 59009192 3-grams
+pruned 56846800 3-grams
+pruned 13603983 2-grams
+total memory 1390182208 (1325.78M), used 85936408 (81.9553M), wasted 1304245800 (1243.83M)
+allocations of size 12: 178993
+allocations of size 20: 167715
+allocations of size 36: 235337
+allocations of size 40: 689
+allocations of size 68: 193559
+allocations of size 72: 862
+allocations of size 132: 161099
+allocations of size 136: 1816
+allocations of size >= 256: 439051
+118 blocks of 2-word chunks
+41 blocks of 3-word chunks
+47 blocks of 5-word chunks
+43 blocks of 9-word chunks
+writing 50002 1-grams
+writing 2490016 2-grams
+writing 2162392 3-grams
 
