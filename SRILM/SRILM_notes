@@ -282,16 +282,19 @@ weibo.bigram with 16,827,647 lines
 debug 2
 
 -------train-3-kn--------
-(time ngram-count -vocab weibo.50k.wlist -order 3 -gt1min 1 -gt2min 2 -gt3min 2 -kndiscount1 -kndiscount2 -kndiscount3 -debug 1 -interpolate -text textsources/weibo.dat -lm weibo-3-GRAM -memuse 1>> $weibo-3-GRAM.LOG 2>> $weibo-3-GRAM.LOG) 2> weibo-3-GRAM.time
+(time /slfs6/users/txh18/software/SRILM/bin/i686-m64/ngram-count -vocab textsources/weibo.50k.wlist -order 3 -gt1min 1 -gt2min 2 -gt3min 2 -kndiscount1 -kndiscount2 -kndiscount3 -debug 1 -interpolate -text textsources/weibo.dat -lm weibo-3-GRAM -memuse 1>> weibo-3-gram.log 2>> weibo-3-gram.log) 2>> weibo-3-GRAM.time
 
 result1 :
 computer:lagrange
 unknown, due to memory full (guess : using swap) and electricity fault
-But I have Kai's result.
+But I have Kai's result:
 weibo.trigram with 75,153,206 lines
 result2 :
 computer:neuman
-now running
+total memory 8603763968 (8205.19M), used 5327410176 (5080.61M), wasted 3276353792 (3124.57M)
+total time : 26m13.477s
+weibo-3-GRAM with 75,153,206 lines, exactly the same with Kai's result
+debug 3
 
 -----prune-2-kn----------
 time ngram -memuse -debug 1 -lm weibo.bigram -write-lm weibo.bigram.1.0e-7 -order 3 -prune 1.0e-7
@@ -325,6 +328,70 @@ discarded 32987 2-gram probs predicting pseudo-events
 discarded 15,004,868 2-gram probs discounted to zero
 writing 50002 1-grams
 writing 16,777,635 2-grams
+
+debug 3 :
+textsources/weibo.dat: line 310660648: 3.10661e+08 sentences, 1.64702e+09 words, 1.22293e+07 OOVs
+0 zeroprobs, logprob= 0 ppl= 1 ppl1= 1
+total memory 8603763968 (8205.19M), used 5327410176 (5080.61M), wasted 3276353792 (3124.57M)
+allocations of size 32: 18889718
+allocations of size 56: 4752422
+allocations of size 104: 3413169
+allocations of size 200: 1814778
+allocations of size >= 256: 2976128
+1 blocks of 2-word chunks
+1 blocks of 3-word chunks
+577 blocks of 4-word chunks
+1 blocks of 5-word chunks
+254 blocks of 7-word chunks
+1 blocks of 9-word chunks
+339 blocks of 13-word chunks
+using ModKneserNey for 1-grams
+modifying 1-gram counts for Kneser-Ney smoothing
+Kneser-Ney smoothing 1-grams
+n1 = 280
+n2 = 309
+n3 = 295
+n4 = 289
+D1 = 0.311804
+D2 = 1.10697
+D3+ = 1.77815
+using ModKneserNey for 2-grams
+modifying 2-gram counts for Kneser-Ney smoothing
+Kneser-Ney smoothing 2-grams
+n1 = 18728154
+n2 = 4715747
+n3 = 2170478
+n4 = 1259321
+D1 = 0.665071
+D2 = 1.08168
+D3+ = 1.45649
+using ModKneserNey for 3-grams
+Kneser-Ney smoothing 3-grams
+n1 = 118544951
+n2 = 23004014
+n3 = 9587553
+n4 = 5407677
+D1 = 0.720406
+D2 = 1.09925
+D3+ = 1.37467
+discarded 1 1-gram probs predicting pseudo-events
+warning: distributing 1.33717e-05 left-over probability mass over 242 zeroton words
+warning: 1.85186e-06 backoff probability mass left for "<s>" -- disabling interpolation
+discarded 2 2-gram contexts containing pseudo-events
+discarded 32987 2-gram probs predicting pseudo-events
+discarded 18723781 2-gram probs discounted to zero
+warning: 2.91694e-06 backoff probability mass left for "私 优化" -- disabling interpolation
+warning: 2.84076e-06 backoff probability mass left for "添 理想" -- disabling interpolation
+warning: 2.87504e-06 backoff probability mass left for "添 理想" -- incrementing denominator
+warning: 2.86621e-06 backoff probability mass left for "真诚 未来" -- disabling interpolation
+warning: 2.8754e-06 backoff probability mass left for "真诚 未来" -- incrementing denominator
+discarded 112230 3-gram contexts containing pseudo-events
+discarded 902801 3-gram probs predicting pseudo-events
+discarded 117375559 3-gram probs discounted to zero
+inserted 3035277 redundant 2-gram probs
+writing 50002 1-grams
+writing 16093999 2-grams
+writing 59009192 3-grams
 
 debug 4 : 
 reading 50002 1-grams
