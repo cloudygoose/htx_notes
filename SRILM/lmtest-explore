@@ -1,6 +1,11 @@
+Relevant cc:
+/lm/src/Discount.cc
+/lm/src/ngram-count.cc
+
 ngram-count -order 3 -gt1min 1 -gt2min 1 -gt3min 1 -text test_htx.dat -write1 cnt1 -write2 cnt2 -write3 cnt3 -kndiscount -debug 1 -lm lmtest
 
 --caution: I didn't use -interpolate
+--remember,  Z1 is the set of all words z with c(a_z) > 0:
 --here's the process in the manual:
 	f(a_z) = (c(a_z) - D0) / c(a_) 	;; for highest order N-grams
 	f(_z)  = (n(*_z) - D1) / n(*_*)	;; for lower order N-grams
@@ -120,6 +125,20 @@ and 10 ** -1.309463 = 0.04903847996632592, this seems ok
 -0.916454	Kai loves	-0.01551216
 -0.916454	KaiKai </s>
 -0.5942346	KaiKai YY	-0.5990888
+
+--Let's try KaiKai YY
+--remember,  Z1 is the set of all words z with c(a_z) > 0:
+cat ./cnt2 | awk '{sum+=$3}END{print sum}' 
+I get 79
+10 ** -0.5942346 = 0.25454548608769395
+(n(*_z) - D1) / n(*_*)
+(2 - 1.23636) / 3 = 0.2545466666666667, seems ok
+bow(a_) = (1 - Sum_Z1 f(a_z)) / (1 - Sum_Z1 f(_z))
+YY </s>
+(1 - 10 ** -0.04830468) / (1 - 10 ** -0.2352127)
+= 0.251716258246535
+10 ** -0.5990888 = 0.2517162192100315, seems ok
+
 -0.4393327	MM </s>
 -0.1383027	Miss YY	-0.1404509
 -0.2352127	YY </s>
@@ -174,6 +193,18 @@ and 10 ** -1.309463 = 0.04903847996632592, this seems ok
 -0.9777236	KK YY </s>
 -0.04830468	KaiKai YY </s>
 -0.1565377	Miss YY </s>
+
+
+--let's try Miss YY </s>
+Warning:
+SRILM implements Kneser-Ney discounting by actually modifying the counts of the lower order N-grams. Thus, when the -write option is used to write the counts with -kndiscount or -ukndiscount, only the highest order N-grams and N-grams that start with <s> will have their regular counts c(a_z), all others will have the modified counts n(*_z) instead. See Warning 2 in the next section.
+SO, IN THE CNT FILE THEY HAVE REGULAR COUNTS, WHICH IS NICE
+It's the highest order
+count Miss YY </s> = 4
+count Miss YY = 4
+p(a_z)=(c(a_z) - D0) / c(a_) =(4 - 1.21053) / 4 =0.6973674999999999
+10 ** -0.1565377 =0.6973674999999999, seems ok
+
 -0.9777236	loves YY </s>
 -1.454845	<s> a3 Miss
 -1.454845	<s> a3 b3
@@ -190,6 +221,15 @@ and 10 ** -1.309463 = 0.04903847996632592, this seems ok
 -1.454845	<s> b3 b3
 -0.9777236	a3 b3 b3
 -0.5254259	b3 b3 </s>
+
+--let's try b3 b3 </s>
+count (* b3 b3) = 4
+count (b3 b3) = 6
+count (b3 b3 </s>) = 3
+p(a_z)=(c(a_z) - D0) / c(a_) =(3 - 1.21053) / 6 = 0.298245
+10 ** -0.5254259 = 0.29824563758615913
+--caution: the c(a_) is not in the cnt2 file, but c(a_) is used
+
 -0.5254259	b3 b3 b3
 -1.278754	d3 b3 </s>
 -1.278754	d3 b3 b3

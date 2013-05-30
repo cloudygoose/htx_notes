@@ -283,7 +283,7 @@ total time : 8m56.66s
 weibo.bigram with 16,827,647 lines
 debug 2
 
--------train-3-kn--------
+-------train-3-kn-interpolate-------
 (time /slfs6/users/txh18/software/SRILM/bin/i686-m64/ngram-count -vocab textsources/weibo.50k.wlist -order 3 -gt1min 1 -gt2min 2 -gt3min 2 -kndiscount1 -kndiscount2 -kndiscount3 -debug 1 -interpolate -text textsources/weibo.dat -lm weibo-3-GRAM -memuse 1>> weibo-3-gram.log 2>> weibo-3-gram.log) 2>> weibo-3-GRAM.time
 
 result1 :
@@ -292,11 +292,20 @@ unknown, due to memory full (guess : using swap) and electricity fault
 But I have Kai's result:
 weibo.trigram with 75,153,206 lines
 result2 :
-computer:neuman
+computer:neumann
 total memory 8603763968 (8205.19M), used 5327410176 (5080.61M), wasted 3276353792 (3124.57M)
 total time : 26m13.477s
-weibo-3-GRAM with 75,153,206 lines, exactly the same with Kai's result
+weibo-3-GRAM with 75,153,206 lines, exactly the same with Kai's result weibo.trigram
 debug 3
+
+---------train-3-kn-noInterpolate-------
+(time /slfs6/users/txh18/software/SRILM/bin/i686-m64/ngram-count -vocab textsources/weibo.50k.wlist -order 3 -gt1min 1 -gt2min 2 -gt3min 2 -kndiscount1 -kndiscount2 -kndiscount3 -debug 1 -text textsources/weibo.dat -lm weibo-3-GRAM-noInter -memuse 1>> weibo-3-gram.log 2>> weibo-3-gram.log) 2>> weibo-3-GRAM.time-noInter
+result : 
+computer:neumann
+total memory 8603763968 (8205.19M), used 5327410176 (5080.61M), wasted 3276353792 (3124.57M)
+total time : real 25m13.036s
+weibo-3-GRAM-noInter with 75153206 lines, every line is a little different from weibo.trigram
+debug 5
 
 -----prune-2-kn----------
 time ngram -memuse -debug 1 -lm weibo.bigram -write-lm weibo.bigram.1.0e-7 -order 3 -prune 1.0e-7
@@ -314,229 +323,6 @@ total memory 1390182208 (1325.78M), used 85936408 (81.9553M), wasted 1304245800 
 total time : 1m33.454s
 weibo.trigram.1.0e-7 4702423 lines
 debug 4
-
-
-=========================================kndiscount-interpolate-EXPLORE=====================
--the manual says:
-kndiscount and -ukndiscount
-Kneser-Ney discounting. This is similar to absolute discounting in that the discounted probability is computed by subtracting a constant D from the N-gram count. The options -kndiscount and -ukndiscount differ as to how this constant is computed. 
-The main idea of Kneser-Ney is to use a modified probability estimate for lower order N-grams used for backoff. Specifically, the modified probability for a lower order N-gram is taken to be proportional to the number of unique words that precede it in the training data. With discounting and normalization we get:
-	f(a_z) = (c(a_z) - D0) / c(a_) 	;; for highest order N-grams
-	f(_z)  = (n(*_z) - D1) / n(*_*)	;; for lower order N-grams
-where the n(*_z) notation represents the number of unique N-grams that match a given pattern with (*) used as a wildcard for a single word. D0 and D1 represent two different discounting constants, as each N-gram order uses a different discounting constant. The resulting conditional probability and the backoff weight is calculated as given in equations (2) and (3):
-	p(a_z)  = (c(a_z) > 0) ? f(a_z) : bow(a_) p(_z)     ; Eqn.2
-	bow(a_) = (1 - Sum_Z1 f(a_z)) / (1 - Sum_Z1 f(_z))  ; Eqn.3
-The option -interpolate is used to create the interpolated versions of -kndiscount and -ukndiscount. In this case we have:
-	p(a_z) = g(a_z) + bow(a_) p(_z)  ; Eqn.4
-Let Z1 be the set {z: c(a_z) > 0}. For highest order N-grams we have:
-	g(a_z)  = max(0, c(a_z) - D) / c(a_)
-	bow(a_) = 1 - Sum_Z1 g(a_z)
-	        = 1 - Sum_Z1 c(a_z) / c(a_) + Sum_Z1 D / c(a_)
-	        = D n(a_*) / c(a_)
-Let Z2 be the set {z: n(*_z) > 0}. For lower order N-grams we have:
-	g(_z)  = max(0, n(*_z) - D) / n(*_*)
-	bow(_) = 1 - Sum_Z2 g(_z)
-	       = 1 - Sum_Z2 n(*_z) / n(*_*) + Sum_Z2 D / n(*_*)
-	       = D n(_*) / n(*_*)
-The original Kneser-Ney discounting (-ukndiscount) uses one discounting constant for each N-gram order. These constants are estimated as
-	D = n1 / (n1 + 2*n2)
-where n1 and n2 are the total number of N-grams with exactly one and two counts, respectively. 
-Chen and Goodman's modified Kneser-Ney discounting (-kndiscount) uses three discounting constants for each N-gram order, one for one-count N-grams, one for two-count N-grams, and one for three-plus-count N-grams:
-	Y   = n1/(n1+2*n2)
-	D1  = 1 - 2Y(n2/n1)
-	D2  = 2 - 3Y(n3/n2)
-	D3+ = 3 - 4Y(n4/n3)
-
-
-
-
-
-
-ngram-count -order 3 -gt1min 1 -gt2min 1 -gt3min 1 -text test_htx.dat -write1 cnt1 -write2 cnt2 -write3 cnt3 -kndiscount1 -kndiscount2 -kndiscount3 -debug 1 -lm lmtest
-
-text_htx.dat:
-<s> Alice loves Bob </s>
-<s> Alice also loves Kai </s>
-<s> Kai loves KaiKai </s>
-<s> Kai also loves Alice </s>
-<s> KK hates Alice </s>
-<s> KK also hates Bob </s>
-<s> KK KK YY </s>
-<s> loves YY </s>
-<s> Miss YY </s>
-<s> KaiKai YY </s>
-<s> YY KK </s>
-<s> MM </s>
-<s> b3 a3 a3 a3 </s>
-<s> c3 a3 a3 a3 </s>
-<s> b3 b3 b3 </s>
-<s> a3 b3 b3 b3 </s>
-<s> d3 b3 b3 b3 </s>
-<s> a3 d3 b3 </s>
-<s> a3 Miss YY </s>
-<s> b3 Miss YY </s>
-<s> c3 Miss YY </s>
-<s> d3 KaiKai YY </s>
-
-warning: distributing 0.538462 left-over probability mass over all 16 words
-n1 = 2
-n2 = 4
-n3 = 4
-n4 = 4
-D1 = 0.2
-D2 = 1.4
-D3+ = 2.2
-
-\data\
-ngram 1=17
-ngram 2=52
-ngram 3=57
-
-\1-grams:
--0.7840372	</s>
--99	<s>	0.2318284
--1.309463	Alice	-0.05883086
--1.344936	Bob	-0.1308702
--1.309463	KK	0.02208804
--1.344936	Kai	-0.05258189
--1.309463	KaiKai	-0.07859299
--1.309463	MM	-0.1182811
--1.165775	Miss	-0.5245043
--1.057992	YY	-0.3573291
--1.165775	a3	-0.05201465
--1.309463	also	-0.1523443
--1.165775	b3	-0.146658
--1.309463	c3	-0.1325376
--1.344936	d3	-0.1504561
--1.344936	hates	-0.1533122
--1.165775	loves	-0.05605629
-
--Let's do some trying:
-for d3 in 1-gram:
-g(_z) = max(0, n(*_z) - D) / n(*_*)
-g(_z) = (2 - 1.4) / 74 + 0.538462 / 16 = 0.04176198310810811
-and 10 ** -1.344936 = 0.04519225372342939, this seems ok
-for Alice in 1-gram:
-g(_z) = max(0, n(*_z) - D) / n(*_*)
-g(_z) = (3 - 2.2) / 74 + 0.538462 / 16 = 0.04446468581081081
-and 10 ** -1.309463 = 0.04903847996632592, this seems ok
-
-
-\2-grams:
--1.459536	<s> Alice	0.0388455
--1.061596	<s> KK	0.05858956
--1.459536	<s> Kai	0.07226925
--1.781755	<s> KaiKai	0.07927416
--1.781755	<s> MM	0.14799
--1.781755	<s> Miss	0.5159668
--1.781755	<s> YY	-0.01551216
--1.061596	<s> a3	0.02527268
--1.061596	<s> b3	0.2149368
--1.459536	<s> c3	0.14799
--1.459536	<s> d3	0.156342
--1.781755	<s> loves	-0.01551216
--0.7191734	Alice </s>
--1.041393	Alice also	0.07927416
--1.041393	Alice loves	-0.01551216
--0.4181434	Bob </s>
--1.138303	KK </s>
--1.138303	KK KK	-0.01551216
--1.138303	KK YY	0.3303302
--1.138303	KK also	0.007811259
--1.138303	KK hates	0.03884549
--0.916454	Kai </s>
--0.916454	Kai also	0.07927416
--0.916454	Kai loves	-0.01551216
--0.916454	KaiKai </s>
--0.5942346	KaiKai YY	-0.5990888
--0.4393327	MM </s>
--0.1383027	Miss YY	-0.1404509
--0.2352127	YY </s>
--1.138303	YY KK	-0.01551216
--1.284431	a3 </s>
--1.284431	a3 Miss	0.5159668
--0.5642715	a3 a3	-0.8072361
--1.284431	a3 b3	0.14799
--1.284431	a3 d3	0.07927416
--0.916454	also hates	0.03884549
--0.5942346	also loves	0.01996016
--1.020203	b3 </s>
--1.342423	b3 Miss	0.5159668
--1.342423	b3 a3	0.08999801
--0.4393327	b3 b3	-0.1272714
--0.7403627	c3 Miss	0.5159668
--0.7403627	c3 a3	0.08999801
--0.916454	d3 KaiKai	0.07927416
--0.5942346	d3 b3	0.218571
--0.7403627	hates Alice	0.043698
--0.7403627	hates Bob	0.1605791
--1.138303	loves Alice	0.043698
--1.138303	loves Bob	0.1605791
--1.138303	loves Kai	0.007811259
--1.138303	loves KaiKai	0.007811259
--1.138303	loves YY	0.3303302
-
-\3-grams:
--1.278754	<s> Alice also
--1.278754	<s> Alice loves
--0.9777236	hates Alice </s>
--0.9777236	loves Alice </s>
--0.9777236	hates Bob </s>
--0.9777236	loves Bob </s>
--1.454845	<s> KK KK
--1.454845	<s> KK also
--1.454845	<s> KK hates
--0.9777236	KK KK YY
--0.9777236	YY KK </s>
--1.278754	<s> Kai also
--1.278754	<s> Kai loves
--0.9777236	loves Kai </s>
--0.9777236	<s> KaiKai YY
--0.9777236	d3 KaiKai YY
--0.9777236	loves KaiKai </s>
--0.9777236	<s> MM </s>
--0.9777236	<s> Miss YY
--0.9777236	a3 Miss YY
--0.9777236	b3 Miss YY
--0.9777236	c3 Miss YY
--0.9777236	<s> YY KK
--0.9777236	KK YY </s>
--0.04830468	KaiKai YY </s>
--0.1565377	Miss YY </s>
--0.9777236	loves YY </s>
--1.454845	<s> a3 Miss
--1.454845	<s> a3 b3
--1.454845	<s> a3 d3
--0.3493347	a3 a3 </s>
--0.3493347	a3 a3 a3
--0.9777236	b3 a3 a3
--0.9777236	c3 a3 a3
--0.9777236	Alice also loves
--0.9777236	KK also hates
--0.9777236	Kai also loves
--1.454845	<s> b3 Miss
--1.454845	<s> b3 a3
--1.454845	<s> b3 b3
--0.9777236	a3 b3 b3
--0.5254259	b3 b3 </s>
--0.5254259	b3 b3 b3
--1.278754	d3 b3 </s>
--1.278754	d3 b3 b3
--1.278754	<s> c3 Miss
--1.278754	<s> c3 a3
--1.278754	<s> d3 KaiKai
--1.278754	<s> d3 b3
--0.9777236	a3 d3 b3
--0.9777236	KK hates Alice
--0.9777236	also hates Bob
--0.9777236	<s> loves YY
--0.9777236	Alice loves Bob
--0.9777236	Kai loves KaiKai
--1.278754	also loves Alice
--1.278754	also loves Kai
-
-\end\
-
 
 ==========================================debugs=============================================
 
@@ -641,4 +427,126 @@ allocations of size >= 256: 439051
 writing 50002 1-grams
 writing 2490016 2-grams
 writing 2162392 3-grams
+
+debug 5
+textsources/weibo.dat: line 310660648: 3.10661e+08 sentences, 1.64702e+09 words, 1.22293e+07 OOVs
+0 zeroprobs, logprob= 0 ppl= 1 ppl1= 1
+total memory 8603763968 (8205.19M), used 5327410176 (5080.61M), wasted 3276353792 (3124.57M)
+allocations of size 32: 18889718
+allocations of size 56: 4752422
+allocations of size 104: 3413169
+allocations of size 200: 1814778
+allocations of size >= 256: 2976128
+1 blocks of 2-word chunks
+1 blocks of 3-word chunks
+577 blocks of 4-word chunks
+1 blocks of 5-word chunks
+254 blocks of 7-word chunks
+1 blocks of 9-word chunks
+339 blocks of 13-word chunks
+using ModKneserNey for 1-grams
+modifying 1-gram counts for Kneser-Ney smoothing
+Kneser-Ney smoothing 1-grams
+n1 = 280
+n2 = 309
+n3 = 295
+n4 = 289
+D1 = 0.311804
+D2 = 1.10697
+D3+ = 1.77815
+using ModKneserNey for 2-grams
+modifying 2-gram counts for Kneser-Ney smoothing
+Kneser-Ney smoothing 2-grams
+n1 = 18728154
+n2 = 4715747
+n3 = 2170478
+n4 = 1259321
+D1 = 0.665071
+D2 = 1.08168
+D3+ = 1.45649
+using ModKneserNey for 3-grams
+Kneser-Ney smoothing 3-grams
+n1 = 118544951
+n2 = 23004014
+n3 = 9587553
+n4 = 5407677
+D1 = 0.720406
+D2 = 1.09925
+D3+ = 1.37467
+discarded 1 1-gram probs predicting pseudo-events
+warning: distributing 1.33717e-05 left-over probability mass over 242 zeroton words
+warning: 1.85186e-06 backoff probability mass left for "<s>" -- disabling interpolation
+discarded 2 2-gram contexts containing pseudo-events
+discarded 32987 2-gram probs predicting pseudo-events
+discarded 18723781 2-gram probs discounted to zero
+warning: 2.91694e-06 backoff probability mass left for "私 优化" -- disabling interpolation
+warning: 2.84076e-06 backoff probability mass left for "添 理想" -- disabling interpolation
+warning: 2.87504e-06 backoff probability mass left for "添 理想" -- incrementing denominator
+warning: 2.86621e-06 backoff probability mass left for "真诚 未来" -- disabling interpolation
+warning: 2.8754e-06 backoff probability mass left for "真诚 未来" -- incrementing denominator
+discarded 112230 3-gram contexts containing pseudo-events
+discarded 902801 3-gram probs predicting pseudo-events
+discarded 117375559 3-gram probs discounted to zero
+inserted 3035277 redundant 2-gram probs
+writing 50002 1-grams
+writing 16093999 2-grams
+writing 59009192 3-grams
+textsources/weibo.dat: line 310660648: 3.10661e+08 sentences, 1.64702e+09 words, 1.22293e+07 OOVs
+0 zeroprobs, logprob= 0 ppl= 1 ppl1= 1
+total memory 8603763968 (8205.19M), used 5327410176 (5080.61M), wasted 3276353792 (3124.57M)
+allocations of size 32: 18889718
+allocations of size 56: 4752422
+allocations of size 104: 3413169
+allocations of size 200: 1814778
+allocations of size >= 256: 2976128
+1 blocks of 2-word chunks
+1 blocks of 3-word chunks
+577 blocks of 4-word chunks
+1 blocks of 5-word chunks
+254 blocks of 7-word chunks
+1 blocks of 9-word chunks
+339 blocks of 13-word chunks
+using ModKneserNey for 1-grams
+modifying 1-gram counts for Kneser-Ney smoothing
+Kneser-Ney smoothing 1-grams
+n1 = 280
+n2 = 309
+n3 = 295
+n4 = 289
+D1 = 0.311804
+D2 = 1.10697
+D3+ = 1.77815
+using ModKneserNey for 2-grams
+modifying 2-gram counts for Kneser-Ney smoothing
+Kneser-Ney smoothing 2-grams
+n1 = 18728154
+n2 = 4715747
+n3 = 2170478
+n4 = 1259321
+D1 = 0.665071
+D2 = 1.08168
+D3+ = 1.45649
+using ModKneserNey for 3-grams
+Kneser-Ney smoothing 3-grams
+n1 = 118544951
+n2 = 23004014
+n3 = 9587553
+n4 = 5407677
+D1 = 0.720406
+D2 = 1.09925
+D3+ = 1.37467
+discarded 1 1-gram probs predicting pseudo-events
+warning: distributing 0.00276188 left-over probability mass over 242 zeroton words
+discarded 2 2-gram contexts containing pseudo-events
+discarded 32986 2-gram probs predicting pseudo-events
+discarded 18722607 2-gram probs discounted to zero
+warning: 2.87504e-06 backoff probability mass left for "添 理想" -- incrementing denominator
+warning: 2.8754e-06 backoff probability mass left for "真诚 未来" -- incrementing denominator
+discarded 112230 3-gram contexts containing pseudo-events
+discarded 902801 3-gram probs predicting pseudo-events
+discarded 117375559 3-gram probs discounted to zero
+inserted 3035277 redundant 2-gram probs
+writing 50002 1-grams
+writing 16093999 2-grams
+writing 59009192 3-grams
 
