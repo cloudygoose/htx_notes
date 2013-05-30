@@ -1,0 +1,358 @@
+ngram-count -order 3 -gt1min 1 -gt2min 1 -gt3min 1 -text test_htx.dat -write1 cnt1 -write2 cnt2 -write3 cnt3 -kndiscount -debug 1 -lm lmtest
+
+--caution: I didn't use -interpolate
+--here's the process in the manual:
+	f(a_z) = (c(a_z) - D0) / c(a_) 	;; for highest order N-grams
+	f(_z)  = (n(*_z) - D1) / n(*_*)	;; for lower order N-grams
+where the n(*_z) notation represents the number of unique N-grams that match a given pattern with (*) used as a wildcard for a single word. D0 and D1 represent two different discounting constants, as each N-gram order uses a different discounting constant. The resulting conditional probability and the backoff weight is calculated as given in equations (2) and (3):
+	p(a_z)  = (c(a_z) > 0) ? f(a_z) : bow(a_) p(_z)     ; Eqn.2
+	bow(a_) = (1 - Sum_Z1 f(a_z)) / (1 - Sum_Z1 f(_z))  ; Eqn.3
+
+test_htx.dat: line 22: 22 sentences, 67 words, 0 OOVs
+0 zeroprobs, logprob= 0 ppl= 1 ppl1= 1
+using ModKneserNey for 1-grams
+modifying 1-gram counts for Kneser-Ney smoothing
+Kneser-Ney smoothing 1-grams
+n1 = 2
+n2 = 4
+n3 = 4
+n4 = 4
+D1 = 0.2
+D2 = 1.4
+D3+ = 2.2
+using ModKneserNey for 2-grams
+modifying 2-gram counts for Kneser-Ney smoothing
+Kneser-Ney smoothing 2-grams
+n1 = 35
+n2 = 10
+n3 = 4
+n4 = 3
+D1 = 0.636364
+D2 = 1.23636
+D3+ = 1.09091
+using ModKneserNey for 3-grams
+Kneser-Ney smoothing 3-grams
+n1 = 51
+n2 = 3
+n3 = 2
+n4 = 1
+D1 = 0.894737
+D2 = 0.210526
+D3+ = 1.21053
+warning: distributing 0.538462 left-over probability mass over all 16 words
+discarded 1 2-gram contexts containing pseudo-events
+discarded 9 3-gram contexts containing pseudo-events
+writing 17 1-grams
+writing 52 2-grams
+writing 57 3-grams
+
+
+
+\data\
+ngram 1=17
+ngram 2=52
+ngram 3=57
+
+\1-grams:
+-0.7840372	</s>
+-99	<s>	0.2318284
+-1.309463	Alice	-0.05883086
+-1.344936	Bob	-0.1308702
+-1.309463	KK	0.02208804
+-1.344936	Kai	-0.05258189
+-1.309463	KaiKai	-0.07859299
+-1.309463	MM	-0.1182811
+-1.165775	Miss	-0.5245043
+-1.057992	YY	-0.3573291
+-1.165775	a3	-0.05201465
+-1.309463	also	-0.1523443
+-1.165775	b3	-0.146658
+-1.309463	c3	-0.1325376
+-1.344936	d3	-0.1504561
+-1.344936	hates	-0.1533122
+-1.165775	loves	-0.05605629
+
+Let's do some trying:
+for d3 in 1-gram:
+g(_z) = max(0, n(*_z) - D) / n(*_*)
+g(_z) = (2 - 1.4) / 74 + 0.538462 / 16 = 0.04176198310810811
+and 10 ** -1.344936 = 0.04519225372342939, this seems ok
+bow(a_) = (1 - Sum_Z1 f(a_z)) / (1 - Sum_Z1 f(_z))
+in this case d3 KaiKai and d3 b3
+bow(d3) = (1 - 10 ** -0.916454 - 10 ** -0.5942346) / (1 - 10 ** -1.165775 - 10 ** -1.309463)
+        = 0.7072027405302289
+10 ** -0.1504561 = 0.7072026835806394, this seems ok
+
+
+for Alice in 1-gram:
+g(_z) = max(0, n(*_z) - D) / n(*_*)
+g(_z) = (3 - 2.2) / 74 + 0.538462 / 16 = 0.04446468581081081
+and 10 ** -1.309463 = 0.04903847996632592, this seems ok
+
+\2-grams:
+-1.459536	<s> Alice	0.0388455
+-1.061596	<s> KK	0.05858956
+-1.459536	<s> Kai	0.07226925
+-1.781755	<s> KaiKai	0.07927416
+-1.781755	<s> MM	0.14799
+-1.781755	<s> Miss	0.5159668
+-1.781755	<s> YY	-0.01551216
+-1.061596	<s> a3	0.02527268
+-1.061596	<s> b3	0.2149368
+-1.459536	<s> c3	0.14799
+-1.459536	<s> d3	0.156342
+-1.781755	<s> loves	-0.01551216
+-0.7191734	Alice </s>
+-1.041393	Alice also	0.07927416
+-1.041393	Alice loves	-0.01551216
+-0.4181434	Bob </s>
+-1.138303	KK </s>
+-1.138303	KK KK	-0.01551216
+-1.138303	KK YY	0.3303302
+-1.138303	KK also	0.007811259
+-1.138303	KK hates	0.03884549
+-0.916454	Kai </s>
+-0.916454	Kai also	0.07927416
+-0.916454	Kai loves	-0.01551216
+-0.916454	KaiKai </s>
+-0.5942346	KaiKai YY	-0.5990888
+-0.4393327	MM </s>
+-0.1383027	Miss YY	-0.1404509
+-0.2352127	YY </s>
+-1.138303	YY KK	-0.01551216
+-1.284431	a3 </s>
+-1.284431	a3 Miss	0.5159668
+-0.5642715	a3 a3	-0.8072361
+-1.284431	a3 b3	0.14799
+-1.284431	a3 d3	0.07927416
+-0.916454	also hates	0.03884549
+-0.5942346	also loves	0.01996016
+-1.020203	b3 </s>
+-1.342423	b3 Miss	0.5159668
+-1.342423	b3 a3	0.08999801
+-0.4393327	b3 b3	-0.1272714
+-0.7403627	c3 Miss	0.5159668
+-0.7403627	c3 a3	0.08999801
+-0.916454	d3 KaiKai	0.07927416
+-0.5942346	d3 b3	0.218571
+-0.7403627	hates Alice	0.043698
+-0.7403627	hates Bob	0.1605791
+-1.138303	loves Alice	0.043698
+-1.138303	loves Bob	0.1605791
+-1.138303	loves Kai	0.007811259
+-1.138303	loves KaiKai	0.007811259
+-1.138303	loves YY	0.3303302
+
+\3-grams:
+-1.278754	<s> Alice also
+-1.278754	<s> Alice loves
+-0.9777236	hates Alice </s>
+-0.9777236	loves Alice </s>
+-0.9777236	hates Bob </s>
+-0.9777236	loves Bob </s>
+-1.454845	<s> KK KK
+-1.454845	<s> KK also
+-1.454845	<s> KK hates
+-0.9777236	KK KK YY
+-0.9777236	YY KK </s>
+-1.278754	<s> Kai also
+-1.278754	<s> Kai loves
+-0.9777236	loves Kai </s>
+-0.9777236	<s> KaiKai YY
+-0.9777236	d3 KaiKai YY
+-0.9777236	loves KaiKai </s>
+-0.9777236	<s> MM </s>
+-0.9777236	<s> Miss YY
+-0.9777236	a3 Miss YY
+-0.9777236	b3 Miss YY
+-0.9777236	c3 Miss YY
+-0.9777236	<s> YY KK
+-0.9777236	KK YY </s>
+-0.04830468	KaiKai YY </s>
+-0.1565377	Miss YY </s>
+-0.9777236	loves YY </s>
+-1.454845	<s> a3 Miss
+-1.454845	<s> a3 b3
+-1.454845	<s> a3 d3
+-0.3493347	a3 a3 </s>
+-0.3493347	a3 a3 a3
+-0.9777236	b3 a3 a3
+-0.9777236	c3 a3 a3
+-0.9777236	Alice also loves
+-0.9777236	KK also hates
+-0.9777236	Kai also loves
+-1.454845	<s> b3 Miss
+-1.454845	<s> b3 a3
+-1.454845	<s> b3 b3
+-0.9777236	a3 b3 b3
+-0.5254259	b3 b3 </s>
+-0.5254259	b3 b3 b3
+-1.278754	d3 b3 </s>
+-1.278754	d3 b3 b3
+-1.278754	<s> c3 Miss
+-1.278754	<s> c3 a3
+-1.278754	<s> d3 KaiKai
+-1.278754	<s> d3 b3
+-0.9777236	a3 d3 b3
+-0.9777236	KK hates Alice
+-0.9777236	also hates Bob
+-0.9777236	<s> loves YY
+-0.9777236	Alice loves Bob
+-0.9777236	Kai loves KaiKai
+-1.278754	also loves Alice
+-1.278754	also loves Kai
+
+\end\
+
+============================test_htx.dat=======================================================
+<s> Alice loves Bob </s>
+<s> Alice also loves Kai </s>
+<s> Kai loves KaiKai </s>
+<s> Kai also loves Alice </s>
+<s> KK hates Alice </s>
+<s> KK also hates Bob </s>
+<s> KK KK YY </s>
+<s> loves YY </s>
+<s> Miss YY </s>
+<s> KaiKai YY </s>
+<s> YY KK </s>
+<s> MM </s>
+<s> b3 a3 a3 a3 </s>
+<s> c3 a3 a3 a3 </s>
+<s> b3 b3 b3 </s>
+<s> a3 b3 b3 b3 </s>
+<s> d3 b3 b3 b3 </s>
+<s> a3 d3 b3 </s>
+<s> a3 Miss YY </s>
+<s> b3 Miss YY </s>
+<s> c3 Miss YY </s>
+<s> d3 KaiKai YY </s>
+==================================cnt1=======================================================
+<s>	22
+</s>	9
+Alice	3
+loves	4
+Bob	2
+also	3
+Kai	2
+KaiKai	3
+KK	3
+hates	2
+YY	5
+Miss	4
+MM	1
+b3	4
+a3	4
+c3	1
+d3	2
+==================================================cnt2=========================================
+<s> Alice	2
+<s> loves	1
+<s> Kai	2
+<s> KK	3
+<s> Miss	1
+<s> KaiKai	1
+<s> YY	1
+<s> MM	1
+<s> b3	3
+<s> c3	2
+<s> a3	3
+<s> d3	2
+Alice loves	1
+Alice also	1
+Alice </s>	2
+loves Alice	1
+loves Bob	1
+loves Kai	1
+loves KaiKai	1
+loves YY	1
+Bob </s>	2
+also loves	2
+also hates	1
+Kai </s>	1
+Kai loves	1
+Kai also	1
+KaiKai </s>	1
+KaiKai YY	2
+KK </s>	1
+KK also	1
+KK hates	1
+KK KK	1
+KK YY	1
+hates Alice	1
+hates Bob	1
+YY </s>	4
+YY KK	1
+Miss YY	4
+MM </s>	1
+b3 a3	1
+b3 b3	4
+b3 </s>	2
+b3 Miss	1
+a3 </s>	1
+a3 Miss	1
+a3 a3	3
+a3 b3	1
+a3 d3	1
+c3 a3	1
+c3 Miss	1
+d3 b3	2
+d3 KaiKai	1
+========================================================cnt3=============================================
+<s> Alice loves	1
+<s> Alice also	1
+<s> loves YY	1
+<s> Kai loves	1
+<s> Kai also	1
+<s> KK hates	1
+<s> KK also	1
+<s> KK KK	1
+<s> Miss YY	1
+<s> KaiKai YY	1
+<s> YY KK	1
+<s> MM </s>	1
+<s> b3 a3	1
+<s> b3 b3	1
+<s> b3 Miss	1
+<s> c3 a3	1
+<s> c3 Miss	1
+<s> a3 b3	1
+<s> a3 d3	1
+<s> a3 Miss	1
+<s> d3 b3	1
+<s> d3 KaiKai	1
+Alice loves Bob	1
+Alice also loves	1
+loves Alice </s>	1
+loves Bob </s>	1
+loves Kai </s>	1
+loves KaiKai </s>	1
+loves YY </s>	1
+also loves Kai	1
+also loves Alice	1
+also hates Bob	1
+Kai loves KaiKai	1
+Kai also loves	1
+KaiKai YY </s>	2
+KK also hates	1
+KK hates Alice	1
+KK KK YY	1
+KK YY </s>	1
+hates Alice </s>	1
+hates Bob </s>	1
+YY KK </s>	1
+Miss YY </s>	4
+b3 a3 a3	1
+b3 b3 b3	3
+b3 b3 </s>	3
+b3 Miss YY	1
+a3 Miss YY	1
+a3 a3 a3	2
+a3 a3 </s>	2
+a3 b3 b3	1
+a3 d3 b3	1
+c3 a3 a3	1
+c3 Miss YY	1
+d3 b3 b3	1
+d3 b3 </s>	1
+d3 KaiKai YY	1
