@@ -273,7 +273,7 @@ total memory : 3113168 (2.96895M)
 total time : 5m52.63s
 debug 1
 
-------train-2-kn--------
+------train-2-interpolate-kn--------
 time ngram-count -vocab weibo.50k.wlist -order 2 -gt1min 1 -gt2min 2 -kndiscount1 -kndiscount2 -debug 1 -interpolate -text textsources/weibo.dat -lm weibo.bigram -memuse
 
 result :
@@ -323,6 +323,33 @@ total memory 1390182208 (1325.78M), used 85936408 (81.9553M), wasted 1304245800 
 total time : 1m33.454s
 weibo.trigram.1.0e-7 4702423 lines
 debug 4
+
+-------ppl-bigram-interpolate-----------
+/home/slhome/txh18/software/SRILM/bin/i686-m64/ngram -debug 2 -lm weibo.bigram -ppl textsources/testset.dat
+ppl	ug	bg	tg
+214.45   2.3%	97.7%	
+/home/slhome/txh18/software/SRILM/bin/i686-m64/ngram -debug 2 -lm weibo.bigram.1.0e-7 -ppl textsources/testset.dat
+ppl	ug	bg	tg
+234.37   11.7%	88.3%	
+
+-------ppl-trigram-interpolate------
+/home/slhome/txh18/software/SRILM/bin/i686-m64/ngram -debug 2 -lm weibo.trigram -ppl textsources/testset.dat
+ppl	ug	bg	tg
+117.42   2.3%	24.9%	72.8%
+/home/slhome/txh18/software/SRILM/bin/i686-m64/ngram -debug 2 -lm weibo.trigram.1.0e-7 -ppl textsources/testset.dat
+ppl	ug	bg	tg
+176.68   9.7%	54.3%	35.9%
+
+--------ppl-trigram-noInterpolate--------
+/home/slhome/txh18/software/SRILM/bin/i686-m64/ngram -debug 2 -lm weibo-3-GRAM-noInter -ppl textsources/testset.dat
+ppl	ug	bg	tg
+117.65   2.3%	24.9%	72.8%
+/home/slhome/txh18/software/SRILM/bin/i686-m64/ngram -debug 2 -lm weibo-3-GRAM-noInter.1.0e-7 -ppl textsources/testset.dat
+ppl	ug	bg	tg
+182.74   11.6%	53.9%	34.5%
+/home/slhome/txh18/software/SRILM/bin/i686-m64/ngram -debug 2 -lm weibo.trigram.1.0e-9 -ppl textsources/testset.dat
+ppl	ug	bg	tg
+121.97   2.6%	31.6%	65.8%
 
 ==========================================debugs=============================================
 

@@ -1,0 +1,86 @@
+--use a pruned model
+
+ngram -debug 2 -lm weibo.trigram.1.0e-7 -ppl textsources/testset-easy.dat > test.weibo.trigram.1.0e-7.ppl
+
+--Let's explore the debug info of the ppl calculation
+--Mind the [2gram], it says it is calculated using backoff
+Information:
+oov means Out Of Vocabulary
+ppl = 10^(-logprob / (ntokens - noov + nsentence))
+ppl1 = 10^(-logprob / (ntokens - noov))
+
+--mind the log here is log10
+<s> 一切 平安 无 事 </s>
+	p( 一切 | <s> ) 	= [2gram] 0.000952066 [ -3.02133 ]
+	p( 平安 | 一切 ...) 	= [2gram] 0.00147587 [ -2.83095 ]
+	p( 无 | 平安 ...) 	= [2gram] 0.00596459 [ -2.22442 ]
+	p( 事 | 无 ...) 	= [3gram] 0.986524 [ -0.00589233 ]
+	p( </s> | 事 ...) 	= [3gram] 0.389402 [ -0.409602 ]
+1 sentences, 4 words, 0 OOVs
+0 zeroprobs, logprob= -8.4922 ppl= 49.939 ppl1= 132.755
+
+--Let's try below
+obviously logprob is the sum of the []
+ppl = 10^(-logprob / (ntokens - noov + nsentences))
+ppl = 10 ** ( 8.4922 / (4 - 0 + 1) ) = 49.93901821388017, seems ok
+ppl1 = 10 ** ( 8.4922 / (4 - 0) ) = 132.75472884617596, seems ok
+
+<s> 万 水 千 山 总是 情 </s>
+	p( 万 | <s> ) 	= [2gram] 0.000291123 [ -3.53592 ]
+	p( 水 | 万 ...) 	= [2gram] 0.00514052 [ -2.28899 ]
+	p( 千 | 水 ...) 	= [3gram] 0.380701 [ -0.419416 ]
+	p( 山 | 千 ...) 	= [3gram] 0.935137 [ -0.0291249 ]
+	p( 总是 | 山 ...) 	= [3gram] 0.0457006 [ -1.34008 ]
+	p( 情 | 总是 ...) 	= [3gram] 0.93037 [ -0.0313441 ]
+	p( </s> | 情 ...) 	= [3gram] 0.889509 [ -0.0508497 ]
+1 sentences, 6 words, 0 OOVs
+0 zeroprobs, logprob= -7.69573 ppl= 12.5716 ppl1= 19.17
+
+<s> 不好意思 没有 给 你 你 着急 了 吧 </s>
+	p( 不好意思 | <s> ) 	= [2gram] 0.000112469 [ -3.94897 ]
+	p( 没有 | 不好意思 ...) 	= [1gram] 9.953e-05 [ -4.00205 ]
+	p( 给 | 没有 ...) 	= [2gram] 0.00183926 [ -2.73536 ]
+	p( 你 | 给 ...) 	= [3gram] 0.236958 [ -0.625328 ]
+	p( 你 | 你 ...) 	= [2gram] 0.000364967 [ -3.43775 ]
+	p( 着急 | 你 ...) 	= [2gram] 4.72172e-05 [ -4.3259 ]
+	p( 了 | 着急 ...) 	= [2gram] 0.04999 [ -1.30112 ]
+	p( 吧 | 了 ...) 	= [3gram] 0.0381298 [ -1.41874 ]
+	p( </s> | 吧 ...) 	= [3gram] 0.974651 [ -0.0111511 ]
+1 sentences, 8 words, 0 OOVs
+0 zeroprobs, logprob= -21.8064 ppl= 264.806 ppl1= 531.856
+
+<s> 不能 再 接 新 活 了 </s>
+	p( 不能 | <s> ) 	= [2gram] 0.000767607 [ -3.11486 ]
+	p( 再 | 不能 ...) 	= [3gram] 0.0697569 [ -1.15641 ]
+	p( 接 | 再 ...) 	= [2gram] 0.00112102 [ -2.95039 ]
+	p( 新 | 接 ...) 	= [2gram] 0.000585896 [ -3.23218 ]
+	p( 活 | 新 ...) 	= [2gram] 0.000300756 [ -3.52179 ]
+	p( 了 | 活 ...) 	= [2gram] 0.028988 [ -1.53778 ]
+	p( </s> | 了 ...) 	= [3gram] 0.620215 [ -0.207457 ]
+1 sentences, 6 words, 0 OOVs
+0 zeroprobs, logprob= -15.7209 ppl= 176.132 ppl1= 417.008
+
+<s> 世界 上 再 也 没有 比 亲人 的 爱 更 珍贵 了 </s>
+	p( 世界 | <s> ) 	= [2gram] 0.000802354 [ -3.09563 ]
+	p( 上 | 世界 ...) 	= [3gram] 0.348802 [ -0.457422 ]
+	p( 再 | 上 ...) 	= [2gram] 0.000220924 [ -3.65576 ]
+	p( 也 | 再 ...) 	= [3gram] 0.0957873 [ -1.01869 ]
+	p( 没有 | 也 ...) 	= [3gram] 0.0721317 [ -1.14187 ]
+	p( 比 | 没有 ...) 	= [3gram] 0.00363675 [ -2.43929 ]
+	p( 亲人 | 比 ...) 	= [2gram] 0.000124203 [ -3.90587 ]
+	p( 的 | 亲人 ...) 	= [2gram] 0.0315565 [ -1.50091 ]
+	p( 爱 | 的 ...) 	= [3gram] 0.0587543 [ -1.23096 ]
+	p( 更 | 爱 ...) 	= [2gram] 0.000340134 [ -3.46835 ]
+	p( 珍贵 | 更 ...) 	= [2gram] 0.000804881 [ -3.09427 ]
+	p( 了 | 珍贵 ...) 	= [2gram] 0.00243563 [ -2.61339 ]
+	p( </s> | 了 ...) 	= [3gram] 0.970861 [ -0.0128429 ]
+1 sentences, 12 words, 0 OOVs
+0 zeroprobs, logprob= -27.6353 ppl= 133.595 ppl1= 200.881
+
+file textsources/testset-easy.dat: 5 sentences, 36 words, 0 OOVs
+0 zeroprobs, logprob= -81.3504 ppl= 96.4175 ppl1= 181.858
+
+ppl = 10^(-logprob / (ntokens - noov + nsentence)) 
+    = 10 ** (81.3504 / (36 - 0 + 5) ) = 96.41755129474701, seems ok
+ppl1 =  10 ** (81.3504 / (36 - 0) ) = 181.8583863956244, seems ok
+

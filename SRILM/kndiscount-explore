@@ -400,3 +400,28 @@ c3 Miss YY	1
 d3 b3 b3	1
 d3 b3 </s>	1
 d3 KaiKai YY	1
+
+
+======================================interpolate==========================
+ngram-count.cc:
+571	} else if (knFile[useorder] || kndiscount[useorder]) {
+	    if (debug) cerr << "using ModKneserNey for " << i << "-grams";
+	    discount = new ModKneserNey(gtmin[useorder], knCountsModified, knCountsModifyAtEnd);
+	    assert(discount);
+
+588	    if (interpolate[0] || interpolate[useorder]) {
+		discount->interpolate = true;
+	    }
+
+609		/*
+		 * Estimate discount params, and write them only if 
+		 * a file was specified, but no language model is
+		 * being estimated.
+		 */
+		if (!(useFloatCounts ? discount->estimate(*floatStats, i) :
+				       discount->estimate(*intStats, i)))
+		{
+		    cerr << "error in discount estimator for order "
+			 << i << endl;
+		    exit(1);
+		}
