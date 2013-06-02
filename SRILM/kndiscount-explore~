@@ -655,7 +655,7 @@ ngram 3=57
 10 ** -1.122487 = 0.0754245972811599, it seems ok
 I can't make sense of the other eqautions like "bow(_) = 1 - Sum_Z2 g(_z)", but since we have the ps, the output backoff should be calculated according to
 bow(a_) = (1 - Sum_Z1 f(a_z)) / (1 - Sum_Z1 f(_z))
-to make things consistent
+to make thins consistent
 
 -0.8255823	also hates	-0.04830466
 -0.5270067	also loves	-0.04830468
