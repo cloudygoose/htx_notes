@@ -125,7 +125,25 @@ To open the file in **shell** you can use `xdg-open binary.ps`.
 
 ![example-picture](./images/1.png "output ps")
 
+FST weight type
+----------
+The flag `--arc_type` supports the same arc types --- standard (tropical), log and log64 --- as in the OpenFst library. For most purposes you will want the default tropical semiring, so you should probably not use this flag too often. Note that `thraxrewrite-tester` will only work if the grammar has been compiled with standard arcs.  
+For example:  
 
+        fstcompile --isymbols=isyms.txt --osymbols=osyms.txt --keep_isymbols --keep_osymbols --arc_type=log text.fst binary.fst 
+
+        fstinfo binary.fst 
+        fst type                                          vector
+        arc type                                          log
+        ...
+
+You see the arc type becomes log.
+
+Determinize
+-----------
+This operation determinizes a weighted transducer. The result will be an equivalent FST that has the property that no state has two transitions with the same input label. 
+
+        fstdeterminize a.fst out.fst
 
 
         </textarea>
