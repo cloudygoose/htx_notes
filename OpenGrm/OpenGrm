@@ -141,12 +141,52 @@ You see the arc type becomes log.
 
 Determinize
 -----------
-This operation determinizes a weighted transducer. The result will be an equivalent FST that has the property that no state has two transitions with the same input label. 
-
+This operation determinizes a weighted transducer. The result will be an equivalent FST that has the property that no state has two transitions with the same input label.   
+The transducer must be **functional**(this is important). The weights must be **(weakly) left divisible** (valid for TropicalWeight and LogWeight for instance) and **zero-sum-free**.  
+        
         fstdeterminize a.fst out.fst
 
 
-        </textarea>
+OpenGrm
+=======
+Corpus I/O
+----------
+Text corpora are represented as **binary finite-state archives**, with one automaton per sentence. This provides efficient later processing by the NGram Library utilities and allows if desired more general probabilistic input (e.g. weighted DAGs or lattices).
+
+The first step is to generate an OpenFst-style symbol table for the text tokens in input corpus. This can be done with the command-line utility ngramsymbols. For example, the symbols in the text of Oscar Wilde's Importance of Being Earnest, using the suitably normalized copy found here, can be extracted with:
+        
+        $ ngramsymbols <earnest.txt >earnest.syms
+
+which is of the format:
+
+        <epsilon>   0
+        MORNING 1
+        ROOM    2
+        IN  3
+        ALGERNON    4
+        ....
+        <unk>   2305
+
+Given a symbol table, a text corpus can be converted to a binary FAR archive with:
+        
+        $ farcompilestrings -symbols=earnest.syms -keep_symbols=1 earnest.txt >earnest.far
+
+Let's see what's in the `earnest.fat`.  
+`farextract` can extract fsts from `far`.  
+
+        farextract earnest.far 
+
+What I get is as follow, apparently, every sentence is put into a fst:
+
+![example-picture](./images/2.png "a lot of fsts")
+
+I try to draw one of them, and get a sentence indeed:
+
+        fstdraw --isymbols=earnest.syms --osymbols=earnest.syms earnest.txt-0418 earnest.txt-0418.dot
+
+![example-picture](./images/3.png "a sentence fst")
+
+</textarea>
 
 
 
