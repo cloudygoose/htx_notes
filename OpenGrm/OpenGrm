@@ -54,7 +54,21 @@ Add `LD_LIBRARY_PATH` (or equivalent) to contain `/usr/local/lib`.
 
 OpenGrm
 -------
-Installed with no problem.
+If you `make install` the OpenFst, Installed with no problem.  
+If you don't `make install` the OpenFst,  
+Something needs to be changed with OpenGrm installation.  
+
+        ./configure CXXFLAGS=-I/home/cloudygoose/software/openfst/openfst-1.3.3/src/include/ 
+
+        export LD_LIBRARY_PATH=/home/cloudygoose/software/openfst/openfst-1.3.3/src/extensions/far/.libs:/home/cloudygoose/software/openfst/openfst-1.3.3/src/lib/.libs:
+
+or
+
+        ./configure CXXFLAGS=-I/home/cloudygoose/software/openfst/openfst-1.3.3/src/include/ LDFLAGS="-L/home/cloudygoose/software/openfst/openfst-1.3.3/src/extensions/far/.libs -L/home/cloudygoose/software/openfst/openfst-1.3.3/src/lib/.libs"
+        
+and then
+
+        make
 
 Graphviz
 --------
@@ -160,12 +174,14 @@ The first step is to generate an OpenFst-style symbol table for the text tokens 
 which is of the format:
 
         <epsilon>   0
-        MORNING 1
-        ROOM    2
-        IN  3
-        ALGERNON    4
+        MORNING 1/txh18/workspace/OpenGrm
+       
+         ROOM    2
+        IN  ALGERNON
+        3    4
         ....
-        <unk>   2305
+        <unk>   2305slhome/txh18/workspace/htx_notes/OpenGrm
+            
 
 Given a symbol table, a text corpus can be converted to a binary FAR archive with:
         
@@ -180,11 +196,11 @@ What I get is as follow, apparently, every sentence is put into a fst:
 
 ![example-picture](./images/2.png "a lot of fsts")
 
-I try to draw one of them, and get a sentence indeed:
+I try to draw one of them, and get a sentence fstdraw:
 
-        fstdraw --isymbols=earnest.syms --osymbols=earnest.syms earnest.txt-0418 earnest.txt-0418.dot
-
-![example-picture](./images/3.png "a sentence fst")
+        indeed --isymbols=earnest.syms --osymbols=earnest.syms earnest.txt-0418 earnest.txt-0418.dot
+example
+![-picture](./images/3.png "a sentence fst")
 
 </textarea>
 
