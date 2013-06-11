@@ -174,14 +174,24 @@ The first step is to generate an OpenFst-style symbol table for the text tokens 
 which is of the format:
 
         <epsilon>   0
-        MORNING 1/txh18/workspace/OpenGrm
-       
-         ROOM    2
+        MORNING 1
+        ROOM    2
         IN  ALGERNON
         3    4
         ....
-        <unk>   2305slhome/txh18/workspace/htx_notes/OpenGrm
+        <unk>   2305
             
+The `earnest.txt` is in the format,**there is no <S></s>**:
+
+        MORNING ROOM IN ALGERNON S FLAT IN HALF MOON STREET
+        THE ROOM IS LUXURIOUSLY AND ARTISTICALLY FURNISHED
+        THE SOUND OF A PIANO IS HEARD IN THE ADJOINING ROOM
+        DID YOU HEAR WHAT I WAS PLAYING LANE
+        I DIDN T THINK IT POLITE TO LISTEN SIR
+        I M SORRY FOR THAT FOR YOUR SAKE
+        I DON T PLAY ACCURATELY ANY ONE CAN PLAY ACCURATELY BUT I PLAY WITH WONDERFUL EXPRESSION
+        AS FAR AS THE PIANO IS CONCERNED SENTIMENT IS MY FORTE
+        I KEEP SCIENCE FOR LIFE
 
 Given a symbol table, a text corpus can be converted to a binary FAR archive with:
         
@@ -196,12 +206,51 @@ What I get is as follow, apparently, every sentence is put into a fst:
 
 ![example-picture](./images/2.png "a lot of fsts")
 
-I try to draw one of them, and get a sentence fstdraw:
+I try to draw one of them, and get a sentence from the text indeed:
 
-        indeed --isymbols=earnest.syms --osymbols=earnest.syms earnest.txt-0418 earnest.txt-0418.dot
-example
+        fstdraw --isymbols=earnest.syms --osymbols=earnest.syms earnest.txt-0418 earnest.txt-0418.dot
+
 ![-picture](./images/3.png "a sentence fst")
 
+**The above process could also be applied to Chinese.**  
+
+N-gram Counting
+---------------
+
+We count using the `ngramcount`.
+
+        $ ngramcount -order=5 earnest.far >earnest.cnts
+
+The `.cnts` file is in the openfst binary file format. We can examine it using the `fstdraw`.  
+To explore the cnt fst, I use this simple txt and count with order = 1 and order = 2 and order = 3.  
+The document says **Transitions and final costs are weighted with the negative log count of the associated n-gram. The log means ln**
+
+        Goose hehe hehe
+        hehe hehe
+
+And we could use `fst info`, it's on tropical.
+
+        fstinfo test.cnts
+        fst type                                          vector
+        arc type                                          standard
+
+So it's on a tropical semiring.
+
+
+![-picture](./images/6.png "order=1")  
+order=1
+
+We have math.e^1.3863=4.000022555584032 and math.e^0=1, so for order one it makes sense.  
+
+![-picture](./images/4.png "order=2")  
+order=2
+
+This is interesting: when we want to get count(hehe), we just go from 0 to 3. When we want to get count(Goose hehe), we go from 0 to 2 to 3. to get count(hehe hehe), go from 0 to 3 to 3, only the last transition is useful.
+
+![-picture](./images/5.png "order=3")  
+order=3
+
+Here is only 3-gram is Goose hehe hehe.
 </textarea>
 
 
