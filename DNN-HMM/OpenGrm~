@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>MathJax TeX Test Page</title>
+</head>
+<body>
+
+<textarea id="text-input" oninput="this.editor.update()" rows="6" cols="60">
+INSTALL
+=======
+==OpenFst==
+First we need to install OpenFst
+cd ~/software/openfst/openfst-1.3.3
+./configure --enable-far --prefix=/usr/lib
+sudo make
+sudo make install
+
+Then I try to compile a test.cpp
+
+#include <fst/fstlib.h>
+#include<fst/fst-decl.h>
+using namespace fst;
+int main() {
+// A vector FST is a general mutable FST 
+StdVectorFst fst;
+
+// Adds state 0 to the initially empty FST and make it the start state. 
+fst.AddState();   // 1st state will be state 0 (returned by AddState) 
+fst.SetStart(0);  // arg is state ID
+
+// Adds two arcs exiting state 0.
+// Arc constructor args: ilabel, olabel, weight, dest state ID. 
+fst.AddArc(0, StdArc(1, 1, 0.5, 1));  // 1st arg is src state ID 
+fst.AddArc(0, StdArc(2, 2, 1.5, 1)); 
+
+// Adds state 1 and its arc. 
+fst.AddState();
+fst.AddArc(1, StdArc(3, 3, 2.5, 2));
+
+// Adds state 2 and set its final weight. 
+fst.AddState();
+fst.SetFinal(2, 3.5);  // 1st arg is state ID, 2nd arg weight
+
+fst.Write("firstFst"); 
+}
+
+g++ test.cpp -I/usr/local/include -L/usr/local/lib -lfst -ldl -o test
+
+Add LD_LIBRARY_PATH (or equivalent) to contain /usr/local/lib.
+==OpenGrm==
+Installed with no problem.
+
+
+</textarea>
+
+
+<div id="preview"> </div>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+</script>
+<script type="text/javascript" src="../lib/MathJax-master/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!--
+<script type="text/javascript"
+   src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+-->
+
+    <script src="../lib/markdown-js/markdown.js"></script>
+    <script>
+      function Editor(input, preview) {
+        this.update = function () {
+          preview.innerHTML = markdown.toHTML(input.value);
+        };
+        input.editor = this;
+        this.update();
+      }
+      var $ = function (id) { return document.getElementById(id); };
+      new Editor($("text-input"), $("preview"));
+    </script>
+
+
+</body>
+</html>

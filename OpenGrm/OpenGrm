@@ -250,7 +250,146 @@ This is interesting: when we want to get count(hehe), we just go from 0 to 3. Wh
 ![-picture](./images/5.png "order=3")  
 order=3
 
-Here is only 3-gram is Goose hehe hehe.
+Here is only 3-gram is `Goose hehe hehe`.
+
+        ngrammake --method=kneser_ney earnest.cnts > earnest-kn.mod
+        ngrammake --method=kneser_ney --backoff=true earnest.cnts > earnest-kn-backoff.mod
+
+We could use `ngramprint` to turn the ngram-model to ARPA format, which we can use to in the SRILM lib.  
+From the results of the two commands above we know **the backoffed and unbackoffed knersey_ney's estimated ngram-model are different**.
+
+        $ ngramprint --ARPA earnest.mod >earnest.ARPA
+        $ head -15 earnest.ARPA
+        \data\
+        ngram 1=2306
+        ngram 2=10319
+        ngram 3=14796
+        ngram 4=15218
+        ngram 5=14170
+
+        \1-grams:
+        -99   <s>   -0.9399067
+        -1.064551   </s>
+        -3.337681   MORNING   -0.3590219
+
+Calculate PPL
+-------------
+
+The `ngramread` can read a ARPA format into binary fst
+
+        $ ngramread --ARPA earnest.ARPA >earnest.mod
+
+The `ngramperplexity` can be used to calculate ppl
+
+        echo -e "A HAND BAG\nBAG HAND A" |\
+            farcompilestrings -generate_keys=1 -symbols=earnest.syms --keep_symbols=1 |\
+            ngramperplexity --v=1 earnest.mod -
+        A HAND BAG
+                                                        ngram  -logprob
+                N-gram probability                      found  (base10)
+                p( A | <s> )                         = [2gram]  1.87984
+                p( HAND | A ...)                     = [2gram]  2.56724
+                p( BAG | HAND ...)                   = [3gram]  0.0457417
+                p( </s> | BAG ...)                   = [4gram]  0.507622
+        1 sentences, 3 words, 0 OOVs
+        logprob(base 10)= -5.00044;  perplexity (base 10)= 17.7873
+
+        BAG HAND A
+                                                        ngram  -logprob
+                N-gram probability                      found  (base10)
+                p( BAG | <s> )                       = [1gram]  4.02771
+                p( HAND | BAG ...)                   = [1gram]  3.35968
+                p( A | HAND ...)                     = [1gram]  2.51843
+                p( </s> | A ...)                     = [1gram]  1.53325
+        1 sentences, 3 words, 0 OOVs
+        logprob(base 10)= -11.4391;  perplexity (base 10)= 724.048
+
+        2 sentences, 6 words, 0 OOVs
+        logprob(base 10)= -16.4395;  perplexity (base 10)= 113.485
+
+However, just `farcompilestrings` can't deal with an unknown symbol 
+
+        echo "A HAND BAG AAAA" |\
+            farcompilestrings -generate_keys=1 -symbols=earnest.syms --keep_symbols=1 |\
+            ngramperplexity --v=1 earnest-kn.mod 
+        FATAL: FarCompileStrings: compiling string number 1 in file  failed with token_type = symbol and entry_type = line
+        FATAL: STListReader: error reading file: stdin
+
+Look at -help ,we need to add the `--unknown_symbol="<unk>"` to farcompilestrings. The unk will be regarded as OOV in ngramperplexity in OpenGrm.
+
+If I use the train data as the test data, the PPL result(**computed by OpenGrm**) is:
+
+        1688 sentences, 17897 words, 0 OOVs
+        logprob(base 10)= -16415.5;  perplexity = 6.88913
+
+
+For PPL, I tried to use SRILM to calculate the same PPL(**computed by SRILM**)
+
+        ngram -order 5 -debug 1 -lm earnest-kn.ARPA -ppl earnest-SRILM.txt > earnest-ppl
+        file earnest-SRILM.txt: 1688 sentences, 17897 words, 0 OOVs
+        0 zeroprobs, logprob= -16415.5 ppl= 6.88913 ppl1= 8.26453
+
+So the two libraries use the same formula to calculate PPL.
+
+OPENGRM's Experiments
+=====================
+In order to use Kai's weibo Data(the same we use in SRLM) in OpenGrm, we need first to eliminate the <s></s> in the weibo.dat
+
+        cat weibo.dat | awk '{ for (k=2; k < NF - 1; k++) printf("%s ", $k); if (NF > 2) print $(NF-1) }' > weibo-opengrm.dat
+
+The next table is the cost of each command runned on `markov` for `weibo.dat`
+
+File lines and time&space
+
+$$
+  \left[\begin{array}{r|r|r|r}
+    files & lines\\\\
+    weibo-opengrm-order-3-kn-backoff.ARPA & 215,893,256 \\\\
+    weibo-opengrm-order-3-kn.ARPA & 215,893,256 \\\\
+    weibo-opengrm-order-3-kn-prune-1.0e-7.ARPA & 6548827 \\\\
+    weibo-opengrm-order-3-kn-backoff-prune-1.0e-7.ARPA & 5886043 \\\\
+  \end{array}\right]
+$$
+
+At first I was surprised that SRILM's lines is much smaller than OpenGrm's. When we tried `-gt1min 1 -gt2min 1 -gt3min 1` in SRILM's ngram-count, I found that SRILM's `3-kn-inter-gtall1` now has 208,216,095 lines, I have
+
+        head weibo-kn-gtall1(SRILM)
+        \data\
+        ngram 1=50002
+        ngram 2=31781329
+        ngram 3=176384751
+
+        head weibo-opengrm-order-3-kn.ARPA(OPENGRM)
+        \data\
+        ngram 1=63137
+        ngram 2=33406565
+        ngram 3=182423541
+
+
+$$
+  \left[\begin{array}{r|r|r|r}
+    command & time & space \\\\
+    ngrammake-order-3 & 88min & 2.6\%,6.5G \\\\
+    ngramperplexity & 9min34s & 2.6\%,6.5G \\\\
+    ngramshrink1.0e-7 & 27m24s & 2.6\%,6.5G 
+  \end{array}\right]
+$$
+
+PPL on test set
+
+$$
+  \left[\begin{array}{r|r|r|r}
+    model & PPL & hit \\\\
+    weibo-opengrm-order-3-kn & 115.449 & 1grams: 223 (1.4\%) 2grams: 3707 (22.5\%) 3grams: 12545 (76.1\%) \\\\
+    weibo-opengrm-order-3-kn-backoff & 115.347 & 1grams: 223 (1.4\%) 2grams: 3707 (22.5\%) 3grams: 12545 (76.1\%)  \\\\
+    weibo-opengrm-order-3-kn-prune-1.0e-7 & 171.056 & 1grams: 1160 (7.0\%) 2grams: 9250 (56.1\%) 3grams: 6065 (36.8\%) \\\\
+    weibo-opengrm-order-3-kn-backoff-prune-1.0e-7 & 177.263 & 1grams: 1532 (9.3\%) 2grams: 9145 (55.5\%) 3grams: 5798 (35.2\%)
+  \end{array}\right]
+$$
+
+We see that the `weibo-opengrm-order-3-kn-ppl` has almost the same ppl as `3-kn-inter-gtall1` in SRILM. Now we need to find out **how to achieve SRILM's `-gt2min 2 -gt3min 3` in OpenGrm**.
+
+
 </textarea>
 
 

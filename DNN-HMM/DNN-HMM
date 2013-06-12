@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>MathJax TeX Test Page</title>
+</head>
+<body>
+
+<textarea id="text-input" oninput="this.editor.update()" rows="6" cols="60">
+
+pass this config to HCOPY to get fbank feature. fbank is a 75-D feature
+
+        SOURCEKIND   = WAVEFORM
+        SOURCEFORMAT = WAV
+        TARGETFORMAT = HTK
+        TARGETKIND   = FBANK_E_D_A
+
+        LOFREQ       = 125
+        HIFREQ       = 3800
+        NUMCHANS     = 24        # number of critical bands               
+        USEPOWER     = T        # using power spectrum                   
+        USEHAMMING   = T        # use hamming window on speech frame     
+
+        PREEMCOEF    = 0        # no preemphase                          
+        TARGETRATE   = 100000   # 10 ms frame rate                       
+        WINDOWSIZE   = 250000   # 25 ms window                           
+        SAVEWITHCRC  = F
+
+        NUMCEPS      = 12
+
+HCOPY
+
+        HCOPY -A -C config.hcopy.raw.nb.fbank 1.wav 1.fbank
+
+use awk to separate training data
+
+cd preparedata  
+change /tools/genidenty.sh  
+
+RunPrepareData  
+
+RunRBMtrain
+
+change /tools/tnet_train.sh
+
+RunFineTune
+
+
+Prepare Data
+=======
+
+        ln -s ../tools/
+
+        out_dir=workdir
+        TNetbin=/slfs2/src/TNet/trunk/src
+
+.scp are plp feature files
+
+        # 1. get train and test scp
+        mkdir -p $out_dir/features
+        mkdir -p $out_dir/flists
+        cp ../lib/flists/train.scp workdir/flists/rbmtrain.scp
+        cp ../lib/flists/train.train.scp workdir/flists/bptrain.scp
+        cp ../lib/flists/train.cv.scp workdir/flists/bptrain_cv.scp
+        cd workdir/flists
+        cd ../../
+
+Join the feature vectors from left 5 and right 5. (11 * 39)
+
+        # 2. join the features of the training set
+        FRM_EXT=5
+        for scp in rbmtrain bptrain bptrain_cv
+        do
+        mkdir -p $out_dir/features/${scp}-tjoiner${FRM_EXT}
+        $TNetbin/TJoiner -A -D -V -T 021 -S $out_dir/flists/${scp}.scp -C ../plp_0_d_a.conf -l `pwd`/$out_dir/features/${scp}-tjoiner${FRM_EXT} --OUTPUT-SCRIPT=$out_dir/flists/${scp}-tjoiner${FRM_EXT}.scp --START-FRM-EXT=$FRM_EXT --END-FRM-EXT=$FRM_EXT | tee TJoiner.${scp}.LOG
+        done
+
+        # 3. global normalization
+        # generate identity transform
+        mkdir norm
+        ./tools/genidenty.sh norm/identity.trans
+        $TNetbin/TNorm -D -A -T 1 -S $out_dir/flists/rbmtrain-tjoiner5.scp -H norm/identity.trans --TARGET-MMF=norm/global.norm --START-FRM-EXT=$FRM_EXT --END-FRM-EXT=$FRM_EXT | tee TNorm.LOG
+        cat norm/identity.trans norm/global.norm > norm/global.transf
+
+        # now can go to rbm train
+
+RBMTrain
+========
+        
+        
+        
+</textarea>
+
+
+
+<div id="preview"> </div>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+</script>
+<script type="text/javascript" src="../lib/MathJax-master/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!--
+<script type="text/javascript"
+   src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+-->
+
+<script src="../lib/markdown-js/markdown.js"></script>
+<script>
+  function Editor(input, preview) {
+    this.update = function () {
+      preview.innerHTML = markdown.toHTML(input.value);
+    };
+    input.editor = this;
+    this.update();
+  }
+  var $ = function (id) { return document.getElementById(id); };
+  new Editor($("text-input"), $("preview"));
+</script>
+
+
+</body>
+</html>

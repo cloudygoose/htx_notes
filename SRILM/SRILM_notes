@@ -351,6 +351,98 @@ ppl	ug	bg	tg
 ppl	ug	bg	tg
 182.74   11.6%	53.9%	34.5%
 
+-------------------with gtmin1 to compare with OPENGRM----------------
+/slfs5/users/txh18/software/SRILM/bin/i686-m64/ngram-count -vocab weibo.50k.wlist -order 3 -gt1min 1 -gt2min 1 -gt3min 1 -kndiscount1 -kndiscount2 -kndiscount3 -debug 1 -interpolate -text weibo.dat -lm weibo-kn-gtall1 -memuse
+weibo.dat: line 310660648: 3.10661e+08 sentences, 1.64702e+09 words, 1.22293e+07 OOVs
+0 zeroprobs, logprob= 0 ppl= 1 ppl1= 1
+total memory 8603763968 (8205.19M), used 5327410176 (5080.61M), wasted 3276353792 (3124.57M)
+allocations of size 32: 18889718
+allocations of size 56: 4752422
+allocations of size 104: 3413169
+allocations of size 200: 1814778
+allocations of size >= 256: 2976128
+1 blocks of 2-word chunks
+1 blocks of 3-word chunks
+577 blocks of 4-word chunks
+1 blocks of 5-word chunks
+254 blocks of 7-word chunks
+1 blocks of 9-word chunks
+339 blocks of 13-word chunks
+using ModKneserNey for 1-grams
+modifying 1-gram counts for Kneser-Ney smoothing
+Kneser-Ney smoothing 1-grams
+n1 = 280
+n2 = 309
+n3 = 295
+n4 = 289
+D1 = 0.311804
+D2 = 1.10697
+D3+ = 1.77815
+using ModKneserNey for 2-grams
+modifying 2-gram counts for Kneser-Ney smoothing
+Kneser-Ney smoothing 2-grams
+n1 = 18728154
+n2 = 4715747
+n3 = 2170478
+n4 = 1259321
+D1 = 0.665071
+D2 = 1.08168
+D3+ = 1.45649
+using ModKneserNey for 3-grams
+Kneser-Ney smoothing 3-grams
+n1 = 118544951
+n2 = 23004014
+n3 = 9587553
+n4 = 5407677
+D1 = 0.720406
+D2 = 1.09925
+D3+ = 1.37467
+discarded 1 1-gram probs predicting pseudo-events
+warning: distributing 1.33717e-05 left-over probability mass over 242 zeroton words
+warning: 4.53282e-07 backoff probability mass left for "<s>" -- disabling interpolation
+discarded 2 2-gram contexts containing pseudo-events
+discarded 32987 2-gram probs predicting pseudo-events
+warning: 2.91694e-06 backoff probability mass left for "私 优化" -- disabling interpolation
+warning: 2.84076e-06 backoff probability mass left for "添 理想" -- disabling interpolation
+warning: 2.87504e-06 backoff probability mass left for "添 理想" -- incrementing denominator
+warning: 2.86621e-06 backoff probability mass left for "真诚 未来" -- disabling interpolation
+warning: 2.8754e-06 backoff probability mass left for "真诚 未来" -- incrementing denominator
+discarded 112230 3-gram contexts containing pseudo-events
+discarded 902801 3-gram probs predicting pseudo-events
+writing 50002 1-grams
+writing 31781329 2-grams
+writing 176384751 3-grams
+ 
+/slfs5/users/txh18/software/SRILM/bin/i686-m64/ngram -memuse -debug 1 -lm weibo-kn-gtall1 -write-lm weibo-kn-gtall1.1.0e-7 -order 3 -prune 1.0e-7
+reading 50002 1-grams
+reading 31781329 2-grams
+reading 176384751 3-grams
+pruned 174175496 3-grams
+pruned 29138371 2-grams
+total memory 3407813768 (3249.94M), used 88018192 (83.9407M), wasted 3319795576 (3166M)
+allocations of size 12: 39932
+allocations of size 20: 53479
+allocations of size 36: 120224
+allocations of size 40: 246
+allocations of size 68: 162233
+allocations of size 72: 137
+allocations of size 132: 191137
+allocations of size 136: 243
+allocations of size >= 256: 825552
+287 blocks of 2-word chunks
+108 blocks of 3-word chunks
+130 blocks of 5-word chunks
+124 blocks of 9-word chunks
+writing 50002 1-grams
+writing 2642958 2-grams
+writing 2209255 3-grams
+/slfs5/users/txh18/software/SRILM/bin/i686-m64/ngram -debug 2 -lm weibo-kn-gtall1 -ppl testset.dat
+ppl	ug	bg	tg
+115.51   1.5%	22.7%	75.8%
+/slfs5/users/txh18/software/SRILM/bin/i686-m64/ngram -debug 2 -lm weibo-kn-gtall1.1.0e-7 -ppl testset.dat
+ppl	ug	bg	tg
+175.68   9.5%	54.4%	36.1%
+
 ==========================================debugs=============================================
 
 debug 1 : 
